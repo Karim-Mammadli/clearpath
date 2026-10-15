@@ -233,6 +233,12 @@ async function main() {
   const s12b = await createSubmission({ sample: getSample("S4"), submitterId: "u_maya", at: daysAgo(9, 4) });
   await decide(s12b.sub.id, s12b.v.id, "u_sam", "APPROVED", daysAgo(8, 23));
 
+  // Shift-left: the submitter fixed the AI-flagged issues before a reviewer ever opened it.
+  const sl = await createSubmission({ sample: getSample("S3"), title: "Rewards Card launch post", submitterId: "u_maya", at: daysAgo(6, 5) });
+  await db.submission.update({ where: { id: sl.sub.id }, data: { currentVersionNumber: 2 } });
+  const sl2 = await addVersion(sl.sub.id, 2, getSample("S4").content, "u_maya", daysAgo(6, 4));
+  await decide(sl.sub.id, sl2.id, "u_sam", "APPROVED", daysAgo(5, 22));
+
   const s7 = await createSubmission({ sample: getSample("S7"), submitterId: "u_diego", at: daysAgo(8, 1) });
   await comment(s7.sub.id, s7.v.id, "u_elena", "No STOP language and \"pre-approved\" without a prescreen list. Rejecting — please use the approved SMS template.", daysAgo(7, 21));
   await decide(s7.sub.id, s7.v.id, "u_elena", "REJECTED", daysAgo(7, 21), "Pre-approved claim without prescreened firm offer; missing TCPA opt-out.");
