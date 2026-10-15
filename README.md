@@ -2,7 +2,7 @@
 
 **Pull requests + an AI pre-reviewer, for marketing content.**
 
-**Live demo:** _LIVE_URL_ · No login needed: use the **"Acting as"** switcher in the top bar.
+**Live demo:** https://clearpath-sup22.vercel.app · No login needed: use the **"Acting as"** switcher in the top bar.
 
 ClearPath Financial (fictional) markets personal loans, credit cards and mortgage prequalification through email, SMS, social, display ads, landing pages and affiliate partners. Every asset needs compliance review (Reg Z/TILA, UDAAP, FCRA, ECOA, CAN-SPAM, TCPA, FTC Endorsement Guides, internal policy), and today that happens in Excel and email. There's no queue or prioritization, versions get lost in threads, the rules live in reviewers' heads, there's no audit trail, and nobody notices when an affiliate changes a page after it was approved. ClearPath Review replaces that with a submission portal, an AI pre-check grounded in a versioned rule library, a prioritized review queue, version diffs, an append-only audit log, and drift monitoring for approved affiliate pages. **The AI proposes, code verifies, humans decide.**
 
