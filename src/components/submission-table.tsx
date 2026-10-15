@@ -37,7 +37,7 @@ export function SubmissionTable({
     return <div className="rounded-lg border border-dashed bg-card p-10 text-center text-sm text-muted-foreground">{empty}</div>;
   }
   return (
-    <div className="overflow-x-auto rounded-lg border bg-card">
+    <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
       <table className="w-full text-sm">
         <thead className="border-b bg-zinc-50 text-left text-xs text-muted-foreground">
           <tr>

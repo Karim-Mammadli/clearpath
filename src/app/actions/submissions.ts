@@ -217,7 +217,7 @@ export async function assignReviewer(formData: FormData) {
   }
   await db.submission.update({ where: { id: submissionId }, data: { assignedReviewerId: assigneeId } });
   await writeAudit({ actorId: user.id, action: "SUBMISSION_ASSIGNED", entityType: "Submission", entityId: submissionId, metadata: { assignee: assigneeId } });
-  for (const p of [`/submissions/${submissionId}`, "/queue", "/submissions", "/"]) revalidatePath(p);
+  for (const p of [`/submissions/${submissionId}`, "/queue", "/submissions", "/dashboard"]) revalidatePath(p);
 }
 
 const DecisionSchema = z.object({

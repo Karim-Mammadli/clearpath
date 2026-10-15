@@ -41,8 +41,8 @@ export function SidebarNav({ items }: { items: NavItem[] }) {
             key={it.href}
             href={it.href}
             className={cn(
-              "flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm whitespace-nowrap text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900",
-              active && "bg-zinc-100 font-medium text-zinc-900",
+              "flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm whitespace-nowrap text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900",
+              active && "bg-primary/10 font-medium text-primary hover:bg-primary/15 hover:text-primary",
             )}
           >
             <Icon className="size-4 shrink-0" />

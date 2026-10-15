@@ -61,7 +61,7 @@ export function canViewSubmission(u: CurrentUser, s: { affiliateId: string | nul
 /** Page guard: unauthorized pages behave like missing pages (don't leak existence). */
 export async function requireRole(check: (u: CurrentUser) => boolean): Promise<CurrentUser> {
   const u = await getCurrentUser();
-  if (!check(u)) redirect("/?denied=1");
+  if (!check(u)) redirect("/dashboard?denied=1");
   return u;
 }
 
