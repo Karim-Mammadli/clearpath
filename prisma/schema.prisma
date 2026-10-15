@@ -1,0 +1,351 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  MARKETER
+  AFFILIATE
+  REVIEWER
+  ADMIN
+}
+
+enum Product {
+  PERSONAL_LOAN
+  CREDIT_CARD
+  MORTGAGE_PREQUAL
+}
+
+enum Channel {
+  EMAIL
+  SMS
+  SOCIAL
+  DISPLAY_AD
+  LANDING_PAGE
+  AFFILIATE_PAGE
+}
+
+enum SubmissionStatus {
+  IN_REVIEW
+  CHANGES_REQUESTED
+  APPROVED
+  REJECTED
+  DRIFT_DETECTED
+}
+
+enum VersionSource {
+  SUBMITTER
+  REWRITE
+  MONITOR
+}
+
+enum AiReviewStatus {
+  COMPLETE
+  PARTIAL
+  FAILED
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum RiskLevel {
+  CLEAR
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum FindingSource {
+  DETERMINISTIC
+  LLM
+  REVIEWER
+}
+
+enum FindingDecision {
+  PENDING
+  ACCEPTED
+  DISMISSED
+}
+
+enum CheckType {
+  DETERMINISTIC
+  LLM
+  BOTH
+}
+
+enum DecisionOutcome {
+  APPROVED
+  CHANGES_REQUESTED
+  REJECTED
+}
+
+enum LlmPurpose {
+  REVIEW
+  REPAIR
+  REWRITE
+  EVAL
+}
+
+enum MonitorStatus {
+  OK
+  DRIFT
+  ERROR
+}
+
+model User {
+  id          String     @id
+  name        String
+  email       String     @unique
+  role        Role
+  team        String?
+  affiliateId String?
+  affiliate   Affiliate? @relation(fields: [affiliateId], references: [id])
+
+  submissions      Submission[]        @relation("Submitter")
+  assigned         Submission[]        @relation("Assignee")
+  versions         SubmissionVersion[]
+  comments         Comment[]
+  decisions        Decision[]
+  findingDecisions Finding[]           @relation("FindingDecider")
+  auditEvents      AuditEvent[]
+}
+
+model Affiliate {
+  id          String       @id
+  name        String
+  website     String
+  slug        String       @unique
+  users       User[]
+  submissions Submission[]
+}
+
+model Submission {
+  id                      String           @id @default(cuid())
+  title                   String
+  product                 Product
+  channel                 Channel
+  status                  SubmissionStatus @default(IN_REVIEW)
+  submitterId             String
+  submitter               User             @relation("Submitter", fields: [submitterId], references: [id])
+  affiliateId             String?
+  affiliate               Affiliate?       @relation(fields: [affiliateId], references: [id])
+  assignedReviewerId      String?
+  assignedReviewer        User?            @relation("Assignee", fields: [assignedReviewerId], references: [id])
+  launchDate              DateTime?
+  sourceUrl               String?
+  notes                   String?
+  currentVersionNumber    Int              @default(1)
+  priorityScore           Int              @default(0)
+  firstOpenedByReviewerAt DateTime?
+  decidedAt               DateTime?
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
+
+  versions  SubmissionVersion[]
+  comments  Comment[]
+  decisions Decision[]
+  monitored MonitoredUrl?
+
+  @@index([status, priorityScore])
+  @@index([submitterId])
+  @@index([affiliateId])
+}
+
+model SubmissionVersion {
+  id             String        @id @default(cuid())
+  submissionId   String
+  submission     Submission    @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  versionNumber  Int
+  contentText    String
+  contentHash    String
+  source         VersionSource @default(SUBMITTER)
+  createdById    String?
+  createdBy      User?         @relation(fields: [createdById], references: [id])
+  /// { hiddenText: string[], comments: string[], zeroWidthCount: number, rawHtml?: boolean }
+  extractionMeta Json?
+  createdAt      DateTime      @default(now())
+
+  aiReviews AiReview[]
+  findings  Finding[]
+  comments  Comment[]
+  decisions Decision[]
+  llmCalls  LlmCall[]
+
+  @@unique([submissionId, versionNumber])
+}
+
+model AiReview {
+  id                 String            @id @default(cuid())
+  versionId          String
+  version            SubmissionVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  status             AiReviewStatus
+  /// "live" | "mock" | "deterministic-only"
+  mode               String
+  riskScore          Int
+  riskLevel          RiskLevel
+  scoreBreakdown     Json
+  summary            String
+  model              String?
+  promptVersion      String
+  ruleSetVersion     Int
+  cacheKey           String
+  cacheHit           Boolean           @default(false)
+  discardedFindings  Int               @default(0)
+  /// Discarded LLM findings with the reason (unknown_rule | quote_not_found), shown on AI Ops
+  discarded          Json?
+  injectionSuspected Boolean           @default(false)
+  statusNote         String?
+  latencyMs          Int?
+  /// Raw (unverified) LLM output, kept so cache hits can be re-verified and replayed
+  rawLlmOutput       Json?
+  createdAt          DateTime          @default(now())
+
+  findings Finding[]
+
+  @@index([cacheKey])
+}
+
+model Finding {
+  id                  String            @id @default(cuid())
+  versionId           String
+  version             SubmissionVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  aiReviewId          String?
+  aiReview            AiReview?         @relation(fields: [aiReviewId], references: [id], onDelete: Cascade)
+  ruleCode            String
+  source              FindingSource
+  severity            Severity
+  quote               String
+  startOffset         Int
+  endOffset           Int
+  missing             Boolean           @default(false)
+  explanation         String
+  suggestedFix        String?
+  confidence          Float?
+  decision            FindingDecision   @default(PENDING)
+  dismissReason       String?
+  dismissNote         String?
+  previouslyDismissed Boolean           @default(false)
+  decidedById         String?
+  decidedBy           User?             @relation("FindingDecider", fields: [decidedById], references: [id])
+  decidedAt           DateTime?
+  createdAt           DateTime          @default(now())
+
+  @@index([versionId])
+  @@index([ruleCode])
+}
+
+model Rule {
+  id                String    @id @default(cuid())
+  code              String    @unique
+  title             String
+  description       String
+  citation          String
+  products          String[]
+  channels          String[]
+  severity          Severity
+  checkType         CheckType
+  guidance          String
+  detector          String?
+  violatingExamples String[]
+  compliantExamples String[]
+  affiliateOnly     Boolean   @default(false)
+  active            Boolean   @default(true)
+  updatedAt         DateTime  @updatedAt
+}
+
+model RuleSetVersion {
+  id         String   @id @default(cuid())
+  version    Int      @unique
+  changeNote String
+  createdAt  DateTime @default(now())
+}
+
+model Comment {
+  id           String             @id @default(cuid())
+  submissionId String
+  submission   Submission         @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  versionId    String?
+  version      SubmissionVersion? @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  authorId     String
+  author       User               @relation(fields: [authorId], references: [id])
+  body         String
+  createdAt    DateTime           @default(now())
+}
+
+model Decision {
+  id           String            @id @default(cuid())
+  submissionId String
+  submission   Submission        @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  versionId    String
+  version      SubmissionVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  reviewerId   String
+  reviewer     User              @relation(fields: [reviewerId], references: [id])
+  outcome      DecisionOutcome
+  reason       String?
+  overrideNote String?
+  createdAt    DateTime          @default(now())
+}
+
+/// Append-only. Only written through src/lib/audit.ts (writeAudit).
+model AuditEvent {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation(fields: [actorId], references: [id])
+  action     String
+  entityType String
+  entityId   String
+  metadata   Json
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model LlmCall {
+  id                  String             @id @default(cuid())
+  purpose             LlmPurpose
+  model               String
+  promptVersion       String
+  inputTokens         Int                @default(0)
+  cachedInputTokens   Int                @default(0)
+  outputTokens        Int                @default(0)
+  reasoningTokens     Int                @default(0)
+  costUsd             Float              @default(0)
+  latencyMs           Int                @default(0)
+  success             Boolean
+  error               String?
+  submissionVersionId String?
+  submissionVersion   SubmissionVersion? @relation(fields: [submissionVersionId], references: [id], onDelete: SetNull)
+  createdAt           DateTime           @default(now())
+
+  @@index([createdAt])
+}
+
+model MonitoredUrl {
+  id            String        @id @default(cuid())
+  submissionId  String        @unique
+  submission    Submission    @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  url           String
+  approvedHash  String
+  lastHash      String?
+  lastCheckedAt DateTime?
+  lastError     String?
+  status        MonitorStatus @default(OK)
+}
+
+model DemoAffiliatePage {
+  id           String  @id @default(cuid())
+  slug         String  @unique
+  title        String
+  approvedHtml String
+  changedHtml  String?
+  showChanged  Boolean @default(false)
+}

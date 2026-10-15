@@ -1,0 +1,21 @@
+# deps
+node_modules/
+
+# next
+.next/
+out/
+next-env.d.ts
+
+# env (secrets) — only .env.example is committed
+.env
+.env*.local
+.env.*
+!.env.example
+
+# misc
+.vercel
+*.tsbuildinfo
+coverage/
+.DS_Store
+npm-debug.log*
+src/generated/
