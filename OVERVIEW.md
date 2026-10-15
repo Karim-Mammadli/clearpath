@@ -7,7 +7,6 @@
 - **Problem:** compliance reviews all of ClearPath's marketing through Excel + email: no queue, lost versions, no audit trail, and no visibility when affiliates change pages after approval. Growth is bottlenecked on review.
 - **Product:** "pull requests for marketing content" with an AI pre-reviewer. Submitters get cited findings in seconds and fix them before review. Reviewers work a prioritized queue with issues already highlighted. **The AI never approves; a human always decides.**
 - **Principle:** the AI proposes, code verifies, humans decide. Each finding must cite an applicable rule and quote text that really exists, or it's discarded. Submitted content is treated as untrusted input.
-- **Results** (real model, 22 labeled samples): recall **80% → 100%** with AI, precision 94%, **0%** clean ads flagged HIGH/CRITICAL, **100%** injection resistance, **~$0.007 and ~6.5s per review**.
 
 ## What it does
 
@@ -52,15 +51,13 @@
 | Content processing | cheerio (HTML extraction with hidden-content detection) · jsdiff (version diffs) · SSRF-guarded fetch |
 | Quality | Vitest (49 unit tests) · eval harness (`npm run eval`) · ESLint · GitHub Actions CI with an eval regression gate |
 | Hosting | Vercel (auto-deploy from `main`) · Neon via Vercel Storage |
-| Built with | Claude Code (AI pair programmer), steered by `CLAUDE.md` and the specs in `docs/` |
+
 
 ## With more time / at company scale
 
 - **Security:** SSO, object storage with malware scanning, immutable audit storage, zero-data-retention with the model provider, PII redaction.
-- **AI quality:** grow evals from real reviews and dismissals; gate every prompt/model/rule change on them; learn from dismissed findings; a rule-authoring assistant that turns regulations into tested rules.
-- **Product:** scheduled monitoring and re-review when rules change; integrations (HubSpot, Braze, ad platforms); Slack alerts and SLAs; per-state rules; video/PDF support.
 
-## What was built (24 hours, with Claude Code as pair programmer)
+## What was built
 
 - **Base:** full workflow, AI pipeline, monitoring, evals, AI Ops and audit, deployed on Vercel + Neon. Every acceptance criterion was verified on the live URL.
 - **Iterations:**
@@ -72,4 +69,3 @@
   - CI with an eval gate
   - landing page with a custom WebGL gradient
   - approval hand-off panel and reviewer feedback checklist
-- **Numbers:** 18 rules · 22 eval samples · 49 tests · ~$0.60 total API spend.
