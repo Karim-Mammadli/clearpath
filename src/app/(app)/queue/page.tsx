@@ -3,6 +3,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { PageHeader } from "@/components/page-header";
 import { SubmissionTable } from "@/components/submission-table";
 import { isReviewer, requireRole } from "@/lib/auth";
+import { ROUTING } from "@/lib/config";
 import { db } from "@/lib/db";
 import { CHANNELS, PRODUCTS, RISK_LEVELS, label } from "@/lib/domain";
 import { listSubmissions } from "@/lib/queries";
@@ -16,7 +17,7 @@ const TABS = [
   { id: "all", label: "All", where: {} },
 ] as const;
 
-type SP = { tab?: string; risk?: string; product?: string; channel?: string; affiliate?: string; mine?: string };
+type SP = { tab?: string; risk?: string; product?: string; channel?: string; affiliate?: string; assignee?: string; mine?: string };
 
 export default async function QueuePage({ searchParams }: { searchParams: Promise<SP> }) {
   const user = await requireRole(isReviewer);
@@ -28,12 +29,16 @@ export default async function QueuePage({ searchParams }: { searchParams: Promis
   if (sp.channel && (CHANNELS as readonly string[]).includes(sp.channel)) where.channel = sp.channel as Prisma.SubmissionWhereInput["channel"];
   if (sp.affiliate === "none") where.affiliateId = null;
   else if (sp.affiliate) where.affiliateId = sp.affiliate;
-  if (sp.mine === "1") where.assignedReviewerId = user.id;
+  const assignee = sp.assignee ?? (sp.mine === "1" ? "me" : "");
+  if (assignee === "me") where.assignedReviewerId = user.id;
+  else if (assignee === "none") where.assignedReviewerId = null;
+  else if (assignee) where.assignedReviewerId = assignee;
 
-  const [rowsAll, affiliates, counts] = await Promise.all([
+  const [rowsAll, affiliates, counts, reviewers] = await Promise.all([
     listSubmissions(where, [{ priorityScore: "desc" }, { createdAt: "asc" }]),
     db.affiliate.findMany({ orderBy: { name: "asc" } }),
     Promise.all(TABS.map((t) => db.submission.count({ where: t.where as Prisma.SubmissionWhereInput }))),
+    db.user.findMany({ where: { role: { in: ["REVIEWER", "ADMIN"] } }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
   ]);
   const rows = sp.risk && (RISK_LEVELS as readonly string[]).includes(sp.risk) ? rowsAll.filter((r) => r.riskLevel === sp.risk) : rowsAll;
 
@@ -41,13 +46,18 @@ export default async function QueuePage({ searchParams }: { searchParams: Promis
     const p = new URLSearchParams(Object.entries({ ...sp, ...patch }).filter(([, v]) => v) as [string, string][]);
     return `/queue?${p.toString()}`;
   };
-  const sel = "h-8 rounded-md border bg-white px-2 text-sm";
+  const sel = "h-8 rounded-md border bg-card px-2 text-sm";
 
   return (
     <div>
       <PageHeader
         title="Review queue"
-        description="Sorted by priority = risk score + launch urgency + age in queue + affiliate source + drift. Open an item to see AI-highlighted findings."
+        description={
+          <>
+            Sorted by priority = risk score + launch urgency + age in queue + affiliate source + drift. New submissions are auto-assigned:{" "}
+            {ROUTING.map((r) => r.label).join("; ")}; otherwise to the least-loaded reviewer. Reassign from any submission page.
+          </>
+        }
       />
       <div className="mb-3 flex flex-wrap gap-1 border-b">
         {TABS.map((t, i) => (
@@ -95,10 +105,17 @@ export default async function QueuePage({ searchParams }: { searchParams: Promis
             </option>
           ))}
         </select>
-        <label className="flex items-center gap-1.5 text-sm">
-          <input type="checkbox" name="mine" value="1" defaultChecked={sp.mine === "1"} /> Assigned to me
-        </label>
-        <button className="h-8 rounded-md border bg-zinc-900 px-3 text-sm text-white">Apply</button>
+        <select name="assignee" defaultValue={assignee} className={sel}>
+          <option value="">Any assignee</option>
+          <option value="me">Assigned to me</option>
+          <option value="none">Unassigned</option>
+          {reviewers.map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.name}
+            </option>
+          ))}
+        </select>
+        <button className="h-8 rounded-md border bg-primary px-3 text-sm text-primary-foreground">Apply</button>
         <Link href={`/queue?tab=${tab.id}`} className="text-xs text-muted-foreground hover:underline">
           Reset
         </Link>

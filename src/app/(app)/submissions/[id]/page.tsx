@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AlertTriangle, ExternalLink, ShieldAlert, Sparkles } from "lucide-react";
-import { addComment, assignToMe } from "@/app/actions/submissions";
+import { addComment } from "@/app/actions/submissions";
 import { ModeBadge, Pill, RiskBadge, StatusBadge } from "@/components/badges";
 import { Panel } from "@/components/page-header";
+import { AssignSelect } from "@/components/review/assign-select";
 import { ContentView } from "@/components/review/content-view";
 import { DecisionBar } from "@/components/review/decision-bar";
 import { DiffView } from "@/components/review/diff-view";
@@ -13,9 +14,10 @@ import { Button } from "@/components/ui/button";
 import { canSubmit, canViewSubmission, getCurrentUser, isReviewer } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { label, SEVERITY_RANK, type SeverityCode } from "@/lib/domain";
-import { HIDDEN_MARKER, type ExtractionMeta } from "@/lib/extract";
+import type { ExtractionMeta } from "@/lib/extract";
 import { computeRisk } from "@/lib/review/scoring";
 import { cn } from "@/lib/utils";
+import { editableText } from "@/lib/versions";
 
 export const maxDuration = 120; // resubmission re-runs the AI review inside a server action
 
@@ -37,6 +39,7 @@ export default async function SubmissionPage({ params, searchParams }: { params:
         orderBy: { versionNumber: "asc" },
         include: {
           createdBy: true,
+          image: { select: { id: true, name: true, mime: true, sizeBytes: true, visual: true, transcript: true } },
           findings: { include: { decidedBy: true } },
           aiReviews: { orderBy: { createdAt: "desc" }, take: 1 },
         },
@@ -52,7 +55,10 @@ export default async function SubmissionPage({ params, searchParams }: { params:
     await db.submission.update({ where: { id }, data: { firstOpenedByReviewerAt: new Date() } });
   }
 
-  const rules = await db.rule.findMany({ select: { code: true, title: true, citation: true } });
+  const [rules, reviewers] = await Promise.all([
+    db.rule.findMany({ select: { code: true, title: true, citation: true } }),
+    reviewer ? db.user.findMany({ where: { role: { in: ["REVIEWER", "ADMIN"] } }, select: { id: true, name: true }, orderBy: { name: "asc" } }) : Promise.resolve([]),
+  ]);
   const ruleMap = new Map(rules.map((r) => [r.code, r]));
 
   const vNum = Math.min(Math.max(1, Number(sp.v) || sub.currentVersionNumber), sub.versions.length);
@@ -61,7 +67,7 @@ export default async function SubmissionPage({ params, searchParams }: { params:
   const ai = version.aiReviews[0];
   const showDiff = sp.diff === "1" && !!prev;
   const isCurrent = version.versionNumber === sub.currentVersionNumber;
-  const meta = (version.extractionMeta as ExtractionMeta | null) ?? null;
+  const meta = (version.extractionMeta as (ExtractionMeta & { image?: { name: string; transcribed: boolean; note: string | null } | null }) | null) ?? null;
 
   const findings: FindingView[] = [...version.findings]
     .sort((a, b) => SEVERITY_RANK[b.severity as SeverityCode] - SEVERITY_RANK[a.severity as SeverityCode] || a.startOffset - b.startOffset)
@@ -96,7 +102,7 @@ export default async function SubmissionPage({ params, searchParams }: { params:
 
   const groups = (["CRITICAL", "HIGH", "MEDIUM", "LOW"] as const).map((sev) => ({ sev, items: findings.filter((f) => f.severity === sev) })).filter((g) => g.items.length);
   const canResubmit = canSubmit(user) && isCurrent && (sub.status === "IN_REVIEW" || sub.status === "CHANGES_REQUESTED" || sub.status === "DRIFT_DETECTED");
-  const editable = version.contentText.split(`\n\n${HIDDEN_MARKER}`)[0];
+  const editable = editableText(version.contentText);
 
   return (
     <div className="space-y-4">
@@ -127,19 +133,7 @@ export default async function SubmissionPage({ params, searchParams }: { params:
             {sub.monitored && <Pill className={sub.monitored.status === "DRIFT" ? "border-red-200 bg-red-50 text-red-700" : ""}>Monitored · {sub.monitored.status}</Pill>}
           </div>
         </div>
-        {reviewer && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            Assignee: <span className="font-medium text-zinc-800">{sub.assignedReviewer?.name ?? "Unassigned"}</span>
-            {sub.assignedReviewerId !== user.id && (
-              <form action={assignToMe}>
-                <input type="hidden" name="submissionId" value={sub.id} />
-                <Button type="submit" size="xs" variant="outline">
-                  Assign to me
-                </Button>
-              </form>
-            )}
-          </div>
-        )}
+        {reviewer && <AssignSelect submissionId={sub.id} current={sub.assignedReviewerId} reviewers={reviewers} />}
       </div>
 
       {sp.new && !reviewer && (
@@ -178,6 +172,12 @@ export default async function SubmissionPage({ params, searchParams }: { params:
         </div>
       )}
 
+      {meta?.image?.note && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-900">
+          <strong>Image not analyzed.</strong> {meta.image.note}. Review the attached image manually.
+        </div>
+      )}
+
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_440px]">
         {/* Left: content */}
         <div className="space-y-4">
@@ -192,7 +192,7 @@ export default async function SubmissionPage({ params, searchParams }: { params:
                       href={`/submissions/${sub.id}?v=${v.versionNumber}`}
                       className={cn(
                         "rounded border px-1.5 py-0.5 text-xs font-normal",
-                        v.versionNumber === version.versionNumber ? "border-zinc-900 bg-zinc-900 text-white" : "bg-white hover:bg-zinc-50",
+                        v.versionNumber === version.versionNumber ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-zinc-50",
                       )}
                     >
                       v{v.versionNumber}
@@ -224,10 +224,34 @@ export default async function SubmissionPage({ params, searchParams }: { params:
             )}
           </Panel>
 
+          {version.image && (
+            <Panel title={`Attached image · ${version.image.name}`}>
+              <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                {/* eslint-disable-next-line @next/next/no-img-element -- authenticated, sniffed image from our API */}
+                <img src={`/api/images/${version.id}`} alt={`Submitted creative: ${version.image.name}`} className="max-h-[480px] w-full rounded-md border object-contain" />
+                <div className="space-y-2 text-xs text-muted-foreground">
+                  <p>
+                    The text in this image was transcribed by AI into the content above (section &ldquo;IMAGE TEXT&rdquo;), so rule-based checks, the AI reviewer and grounding all run on it. Compare the
+                    transcription against the image before relying on it.
+                  </p>
+                  {version.image.visual && (
+                    <p>
+                      <span className="font-medium text-foreground">Visual elements: </span>
+                      {version.image.visual}
+                    </p>
+                  )}
+                  <p>
+                    {version.image.mime} · {(version.image.sizeBytes / 1024).toFixed(0)} KB
+                  </p>
+                </div>
+              </div>
+            </Panel>
+          )}
+
           {canResubmit && (
             <Panel title="Fix and resubmit">
               <p className="mb-2 text-sm text-muted-foreground">Edit the content and submit a new version. All checks re-run and the reviewer sees a diff.</p>
-              <ResubmitForm submissionId={sub.id} initial={editable} />
+              <ResubmitForm submissionId={sub.id} initial={editable} hasImage={!!version.image} />
             </Panel>
           )}
 
@@ -311,7 +335,7 @@ export default async function SubmissionPage({ params, searchParams }: { params:
 
           {reviewer && isCurrent && sub.status !== "APPROVED" && sub.status !== "REJECTED" && (
             <Panel title="Decision">
-              <DecisionBar submissionId={sub.id} blockingCriticals={blockingCriticals} />
+              <DecisionBar submissionId={sub.id} versionNumber={version.versionNumber} blockingCriticals={blockingCriticals} />
             </Panel>
           )}
 
@@ -319,7 +343,7 @@ export default async function SubmissionPage({ params, searchParams }: { params:
             <h2 className="text-sm font-semibold">
               Findings <span className="font-normal text-muted-foreground">({findings.filter((f) => f.decision !== "DISMISSED").length} open)</span>
             </h2>
-            {findings.length === 0 && <div className="rounded-lg border border-dashed bg-white p-6 text-center text-sm text-emerald-700">No findings. Ready for a quick human check.</div>}
+            {findings.length === 0 && <div className="rounded-lg border border-dashed bg-card p-6 text-center text-sm text-emerald-700">No findings. Ready for a quick human check.</div>}
             {groups.map((g) => (
               <div key={g.sev} className="space-y-2">
                 {g.items.map((f) => (

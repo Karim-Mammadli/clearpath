@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { extractContent } from "@/lib/extract";
 import { computeCostUsd, type LlmUsage } from "@/lib/llm/client";
 import { refreshPriority, reviewVersion } from "@/lib/review/pipeline";
+import { routeSubmission } from "@/lib/routing";
 import { RULE_CATALOG } from "@/lib/rules/catalog";
 import { getSample, type Sample } from "@/lib/samples";
 import type { Prisma } from "@/generated/prisma/client";
@@ -126,7 +127,7 @@ async function createSubmission(opts: {
       status: "IN_REVIEW",
       submitterId: opts.submitterId,
       affiliateId: s.affiliateSlug === "loanfinderhub" ? "aff_lfh" : s.affiliateSlug === "creditcompass" ? "aff_cc" : null,
-      assignedReviewerId: opts.assignedReviewerId,
+      assignedReviewerId: opts.assignedReviewerId ?? (await routeSubmission({ product: s.product, channel: s.channel, affiliateId: s.affiliateSlug === "loanfinderhub" ? "aff_lfh" : s.affiliateSlug === "creditcompass" ? "aff_cc" : null })).reviewerId,
       launchDate: opts.launchDate ?? null,
       sourceUrl: opts.sourceUrl,
       notes: opts.notes,
@@ -149,11 +150,13 @@ async function decide(
   await db.submission.update({ where: { id: submissionId }, data: { firstOpenedByReviewerAt: new Date(at.getTime() - 20 * 60_000) } });
   const findings = await db.finding.findMany({ where: { versionId, decision: "PENDING" } });
   for (const f of findings) {
-    const dismiss = f.source === "LLM" && (f.confidence ?? 1) < 0.6;
+    // Approvals dismiss leftover non-critical findings with a reason (acceptable in context / false positive);
+    // changes-requested and rejections accept them. Gives the precision stats realistic, non-100% values.
+    const dismiss = outcome === "APPROVED" && f.severity !== "CRITICAL";
     await db.finding.update({
       where: { id: f.id },
       data: dismiss
-        ? { decision: "DISMISSED", dismissReason: "FALSE_POSITIVE", dismissNote: "Low-confidence AI finding; acceptable in context.", decidedById: reviewerId, decidedAt: at }
+        ? { decision: "DISMISSED", dismissReason: f.source === "LLM" ? "FALSE_POSITIVE" : "ACCEPTABLE_RISK", dismissNote: f.source === "LLM" ? "Claim is substantiated in the linked terms." : "Disclosure is present on the linked landing page.", decidedById: reviewerId, decidedAt: at }
         : { decision: "ACCEPTED", decidedById: reviewerId, decidedAt: at },
     });
     await writeAudit({ actorId: reviewerId, action: dismiss ? "FINDING_DISMISSED" : "FINDING_ACCEPTED", entityType: "Finding", entityId: f.id, metadata: { ruleCode: f.ruleCode, submissionId }, createdAt: at });
@@ -265,6 +268,18 @@ async function main() {
   await createSubmission({ sample: getSample("S6"), submitterId: "u_priya", at: daysAgo(1, 7) });
   await createSubmission({ sample: getSample("S9"), submitterId: "u_maya", at: daysAgo(2, 1), launchDate: inDays(10) });
   await createSubmission({ sample: getSample("S10"), submitterId: "u_diego", at: daysAgo(0, 9) });
+
+  // In-progress triage: reviewers have already accepted the AI's judgment findings on two open items.
+  const triage = await db.finding.findMany({
+    where: { source: "LLM", decision: "PENDING", version: { submission: { title: { in: [getSample("S5").title, getSample("S9").title] } } } },
+    include: { version: { select: { submissionId: true } } },
+  });
+  for (const f of triage) {
+    const at = daysAgo(0, 2);
+    await db.finding.update({ where: { id: f.id }, data: { decision: "ACCEPTED", decidedById: "u_elena", decidedAt: at } });
+    await db.submission.update({ where: { id: f.version.submissionId }, data: { firstOpenedByReviewerAt: daysAgo(0, 3) } });
+    await writeAudit({ actorId: "u_elena", action: "FINDING_ACCEPTED", entityType: "Finding", entityId: f.id, metadata: { ruleCode: f.ruleCode, submissionId: f.version.submissionId }, createdAt: at });
+  }
 
   for (const sub of await db.submission.findMany({ select: { id: true } })) await refreshPriority(sub.id);
 

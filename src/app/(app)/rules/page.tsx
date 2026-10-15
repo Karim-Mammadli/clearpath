@@ -34,7 +34,7 @@ export default async function RulesPage() {
           </>
         }
       />
-      <div className="overflow-x-auto rounded-lg border bg-white">
+      <div className="overflow-x-auto rounded-lg border bg-card">
         <table className="w-full text-sm">
           <thead className="border-b bg-zinc-50 text-left text-xs text-muted-foreground">
             <tr>
@@ -43,7 +43,7 @@ export default async function RulesPage() {
               <th className="px-3 py-2 font-medium">Check</th>
               <th className="px-3 py-2 font-medium">Applies to</th>
               <th className="px-3 py-2 text-right font-medium">Triggered</th>
-              <th className="px-3 py-2 text-right font-medium">Accept rate</th>
+              <th className="px-3 py-2 text-right font-medium" title="Of the findings reviewers decided on, the share they accepted (vs dismissed). A precision proxy: low = the rule or AI is flagging things reviewers disagree with. — = no reviewer decisions yet.">Reviewer accept rate ⓘ</th>
               <th className="px-3 py-2 font-medium">Last hit</th>
             </tr>
           </thead>
@@ -81,7 +81,7 @@ export default async function RulesPage() {
                   </td>
                   <td className="px-3 py-2 text-right tabular-nums">{s?.hits ?? 0}</td>
                   <td className="px-3 py-2 text-right tabular-nums">
-                    {rate === null ? "—" : `${Math.round(rate * 100)}%`}
+                    {rate === null ? <span className="text-muted-foreground" title="No reviewer decisions yet">—</span> : <>{Math.round(rate * 100)}% <span className="text-xs text-muted-foreground">({s!.accepted}/{decided})</span></>}
                     {rate !== null && decided >= 3 && rate < 0.6 && <div className="text-[11px] font-medium text-amber-700">Needs tuning</div>}
                   </td>
                   <td className="px-3 py-2 text-xs text-muted-foreground">{s?.last ? s.last.toLocaleDateString("en-US") : "—"}</td>

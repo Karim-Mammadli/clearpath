@@ -22,10 +22,10 @@ function launch(d: Date | null) {
 
 export function SubmissionTable({ rows, showPriority = false, empty = "Nothing here yet." }: { rows: SubmissionRow[]; showPriority?: boolean; empty?: string }) {
   if (rows.length === 0) {
-    return <div className="rounded-lg border border-dashed bg-white p-10 text-center text-sm text-muted-foreground">{empty}</div>;
+    return <div className="rounded-lg border border-dashed bg-card p-10 text-center text-sm text-muted-foreground">{empty}</div>;
   }
   return (
-    <div className="overflow-x-auto rounded-lg border bg-white">
+    <div className="overflow-x-auto rounded-lg border bg-card">
       <table className="w-full text-sm">
         <thead className="border-b bg-zinc-50 text-left text-xs text-muted-foreground">
           <tr>

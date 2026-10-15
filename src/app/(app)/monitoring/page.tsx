@@ -29,7 +29,7 @@ export default async function MonitoringPage() {
         }
         actions={<CheckAllButton />}
       />
-      <div className="overflow-x-auto rounded-lg border bg-white">
+      <div className="overflow-x-auto rounded-lg border bg-card">
         <table className="w-full text-sm">
           <thead className="border-b bg-zinc-50 text-left text-xs text-muted-foreground">
             <tr>

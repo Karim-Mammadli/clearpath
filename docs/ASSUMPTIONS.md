@@ -14,7 +14,8 @@ Product, scope and technical assumptions made for v1. These feed the README and 
 
 ## Scope (v1)
 
-- **Text only.** Email/SMS/social copy, ad copy, and HTML pages (fetched by URL). Images (OCR), video and audio transcripts are future work.
+- **Text + one optional image per version.** Email/SMS/social copy, ad copy, HTML pages (fetched by URL), and an image creative whose text the AI transcribes for review. Images (≤3MB) are stored in Postgres for v1; production would use object storage with malware scanning. Video and audio are future work.
+- **Review routing:** new submissions are auto-assigned by simple rules in `src/lib/config.ts` (`ROUTING`: affiliate and mortgage content → Elena, SMS → Sam), otherwise to the least-loaded reviewer. Any reviewer can reassign. Real version: routing rules managed in the UI, with SLAs and out-of-office handling.
 - **Demo auth:** a role switcher backed by seeded users and a cookie (no passwords). Real version: SSO/SAML with role mapping from the IdP. All authorization is still enforced server-side.
 - **Rule library is read-only in the UI** (with per-rule stats). Editing rules would bump the rule-set version; the data model already stores the rule-set version on every AI review.
 - **Affiliate monitoring runs on demand** ("Check now" / "Check all") rather than on a schedule (Vercel cron is out of scope for the deadline). Monitored URLs are created automatically when an affiliate/landing page submitted by URL is approved.

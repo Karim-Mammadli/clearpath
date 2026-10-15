@@ -9,7 +9,7 @@ import { CHANNELS, PRODUCTS, label } from "@/lib/domain";
 
 type SampleOpt = { id: string; title: string; product: string; channel: string; content: string; url?: string };
 
-const field = "h-9 w-full rounded-md border bg-white px-3 text-sm";
+const field = "h-9 w-full rounded-md border bg-card px-3 text-sm";
 
 function SubmitButton({ ruleHint }: { ruleHint: string }) {
   const { pending } = useFormStatus();
@@ -54,7 +54,7 @@ export function SubmitForm({ samples, ruleCounts }: { samples: SampleOpt[]; rule
     <form ref={formRef} action={action} className="space-y-5">
       <div className="flex flex-wrap items-center gap-2 rounded-md border border-dashed bg-zinc-50 px-3 py-2 text-sm">
         <span className="text-muted-foreground">Demo: load a sample →</span>
-        <select className="h-8 rounded-md border bg-white px-2 text-sm" defaultValue="" onChange={(e) => loadSample(e.target.value)}>
+        <select className="h-8 rounded-md border bg-card px-2 text-sm" defaultValue="" onChange={(e) => loadSample(e.target.value)}>
           <option value="" disabled>
             Choose a sample…
           </option>
@@ -94,13 +94,13 @@ export function SubmitForm({ samples, ruleCounts }: { samples: SampleOpt[]; rule
       </div>
 
       <div className="space-y-2">
-        <div className="inline-flex rounded-md border bg-white p-0.5 text-sm">
+        <div className="inline-flex rounded-md border bg-card p-0.5 text-sm">
           {(["text", "url"] as const).map((m) => (
             <button
               key={m}
               type="button"
               onClick={() => setMode(m)}
-              className={`rounded px-3 py-1 ${mode === m ? "bg-zinc-900 text-white" : "text-zinc-600"}`}
+              className={`rounded px-3 py-1 ${mode === m ? "bg-primary text-primary-foreground" : "text-zinc-600"}`}
             >
               {m === "text" ? "Paste content" : "Landing page URL"}
             </button>
@@ -110,8 +110,8 @@ export function SubmitForm({ samples, ruleCounts }: { samples: SampleOpt[]; rule
           <textarea
             name="content"
             rows={12}
-            className="w-full rounded-md border bg-white p-3 font-mono text-sm"
-            placeholder="Paste the email, SMS, social post, ad copy or page HTML…"
+            className="w-full rounded-md border bg-card p-3 font-mono text-sm"
+            placeholder="Paste the email, SMS, social post, ad copy or page HTML… (optional if you attach an image)"
           />
         ) : (
           <div className="space-y-1">
@@ -122,6 +122,8 @@ export function SubmitForm({ samples, ruleCounts }: { samples: SampleOpt[]; rule
           </div>
         )}
       </div>
+
+      <ImagePicker />
 
       <div className="grid gap-4 md:grid-cols-2">
         <label className="space-y-1.5">
@@ -137,5 +139,39 @@ export function SubmitForm({ samples, ruleCounts }: { samples: SampleOpt[]; rule
       {state?.error && <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{state.error}</div>}
       <SubmitButton ruleHint={ruleHint} />
     </form>
+  );
+}
+
+function ImagePicker() {
+  const [preview, setPreview] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  return (
+    <div className="space-y-2 rounded-md border border-dashed p-3">
+      <div className="text-sm font-medium">Image creative (optional)</div>
+      <p className="text-xs text-muted-foreground">
+        PNG, JPEG, GIF or WebP up to 3MB. The AI transcribes the text in the image (including fine print) so it&apos;s checked against the same rules, and flags instructions hidden in images.
+      </p>
+      <input
+        type="file"
+        name="image"
+        accept="image/png,image/jpeg,image/gif,image/webp"
+        className="text-sm file:mr-3 file:rounded-md file:border file:bg-card file:px-3 file:py-1.5 file:text-sm"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          setError(null);
+          if (preview) URL.revokeObjectURL(preview);
+          if (!file) return setPreview(null);
+          if (file.size > 3 * 1024 * 1024) {
+            setError("Image is larger than 3MB.");
+            e.target.value = "";
+            return setPreview(null);
+          }
+          setPreview(URL.createObjectURL(file));
+        }}
+      />
+      {error && <p className="text-xs text-red-700">{error}</p>}
+      {/* eslint-disable-next-line @next/next/no-img-element -- local object URL preview */}
+      {preview && <img src={preview} alt="Selected image preview" className="max-h-48 rounded-md border object-contain" />}
+    </div>
   );
 }

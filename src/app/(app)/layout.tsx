@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
 import { RoleSwitcher } from "@/components/role-switcher";
 import { SidebarNav, type NavItem } from "@/components/sidebar-nav";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { canSubmit, getCurrentUser, isAdmin, isReviewer } from "@/lib/auth";
 import { APP } from "@/lib/config";
 import { db } from "@/lib/db";
@@ -35,13 +36,18 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
-      <aside className="border-b bg-white md:sticky md:top-0 md:h-screen md:w-60 md:shrink-0 md:border-r md:border-b-0">
+      <aside className="border-b bg-card md:sticky md:top-0 md:h-screen md:w-60 md:shrink-0 md:border-r md:border-b-0">
         <div className="flex h-full flex-col gap-4 p-3">
           <Link href="/" className="flex items-center gap-2 px-2 pt-1">
-            <ShieldCheck className="size-5 text-emerald-600" />
+            {APP.logoSrc ? (
+              // eslint-disable-next-line @next/next/no-img-element -- static brand asset from /public, any size/format
+              <img src={APP.logoSrc} alt="" className="h-7 w-auto max-w-[2.5rem] object-contain" />
+            ) : (
+              <ShieldCheck className="size-5 text-emerald-600" />
+            )}
             <div className="leading-tight">
               <div className="text-sm font-semibold">{APP.name}</div>
-              <div className="text-[11px] text-muted-foreground">ClearPath Financial</div>
+              <div className="text-[11px] text-muted-foreground">{APP.company}</div>
             </div>
           </Link>
           <SidebarNav items={nav} />
@@ -54,15 +60,18 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex flex-wrap items-center justify-between gap-2 border-b bg-white px-4 py-2 md:px-6">
+        <header className="flex flex-wrap items-center justify-between gap-2 border-b bg-card px-4 py-2 md:px-6">
           <div className="text-xs text-muted-foreground">
             Signed in as <span className="font-medium text-zinc-800">{user.name}</span> · {label(user.role)}
             {user.affiliateName ? ` · ${user.affiliateName}` : user.team ? ` · ${user.team}` : ""}
           </div>
-          <RoleSwitcher
-            currentId={user.id}
-            users={users.map((u) => ({ id: u.id, name: u.name, role: u.role, org: u.affiliate?.name ?? u.team ?? "" }))}
-          />
+          <div className="flex items-center gap-2">
+            <RoleSwitcher
+              currentId={user.id}
+              users={users.map((u) => ({ id: u.id, name: u.name, role: u.role, org: u.affiliate?.name ?? u.team ?? "" }))}
+            />
+            <ThemeToggle />
+          </div>
         </header>
         {mode === "mock" && (
           <div className="border-b border-fuchsia-200 bg-fuchsia-50 px-4 py-1.5 text-xs text-fuchsia-800 md:px-6">

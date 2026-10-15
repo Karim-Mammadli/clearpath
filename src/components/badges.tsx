@@ -46,7 +46,7 @@ export function StatusBadge({ status }: { status: string }) {
 
 export function SourceBadge({ source }: { source: string }) {
   const styles: Record<string, string> = {
-    DETERMINISTIC: "border-zinc-300 bg-white text-zinc-700",
+    DETERMINISTIC: "border-zinc-300 bg-card text-zinc-700",
     LLM: "border-violet-200 bg-violet-50 text-violet-700",
     REVIEWER: "border-teal-200 bg-teal-50 text-teal-700",
   };

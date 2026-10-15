@@ -33,7 +33,7 @@ export default async function SubmitPage() {
         title="Submit content for review"
         description="Paste content or a landing-page URL. Rule-based checks and the AI pre-reviewer run immediately, so you can fix issues before a compliance reviewer opens it. AI findings are advisory: a human reviewer always makes the decision."
       />
-      <div className="rounded-lg border bg-white p-5">
+      <div className="rounded-lg border bg-card p-5">
         <SubmitForm samples={samples} ruleCounts={ruleCounts} />
       </div>
     </div>

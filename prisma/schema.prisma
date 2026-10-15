@@ -93,6 +93,7 @@ enum LlmPurpose {
   REPAIR
   REWRITE
   EVAL
+  TRANSCRIBE
 }
 
 enum MonitorStatus {
@@ -179,6 +180,7 @@ model SubmissionVersion {
   comments  Comment[]
   decisions Decision[]
   llmCalls  LlmCall[]
+  image     SubmissionImage?
 
   @@unique([submissionId, versionNumber])
 }
@@ -348,4 +350,22 @@ model DemoAffiliatePage {
   approvedHtml String
   changedHtml  String?
   showChanged  Boolean @default(false)
+}
+
+/// Optional creative attached to a version (stored in Postgres for v1; object storage in production).
+/// The AI transcribes its text into the version's contentText so findings stay grounded and verifiable.
+model SubmissionImage {
+  id         String            @id @default(cuid())
+  versionId  String            @unique
+  version    SubmissionVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  data       Bytes
+  mime       String
+  name       String
+  sizeBytes  Int
+  hash       String
+  transcript String?
+  visual     String?
+  createdAt  DateTime          @default(now())
+
+  @@index([hash])
 }

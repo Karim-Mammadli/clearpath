@@ -35,7 +35,7 @@ export function computeCostUsd(u: LlmUsage): number {
   return (uncached * p.input + u.cachedInputTokens * p.cachedInput + u.outputTokens * p.output) / 1_000_000;
 }
 
-export type LlmPurpose = "REVIEW" | "REPAIR" | "REWRITE" | "EVAL";
+export type LlmPurpose = "REVIEW" | "REPAIR" | "REWRITE" | "EVAL" | "TRANSCRIBE";
 
 export type LlmCallLog = {
   purpose: LlmPurpose;
@@ -75,7 +75,7 @@ function usageOf(r: { usage?: OpenAI.Responses.ResponseUsage | null }): LlmUsage
 /** One structured-output call. Returns raw JSON text; the caller validates with Zod (and may repair). */
 export async function generateStructured(opts: {
   instructions: string;
-  input: string;
+  input: string | OpenAI.Responses.ResponseInput;
   schema: z.ZodType;
   schemaName: string;
   timeoutMs: number;

@@ -18,7 +18,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
     db.auditEvent.count({ where: auditWhere(sp) }),
   ]);
   const qs = new URLSearchParams(Object.entries(sp).filter(([, v]) => v) as [string, string][]).toString();
-  const sel = "h-8 rounded-md border bg-white px-2 text-sm";
+  const sel = "h-8 rounded-md border bg-card px-2 text-sm";
 
   return (
     <div>
@@ -50,7 +50,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
           ))}
         </select>
         <input name="entity" defaultValue={sp.entity ?? ""} placeholder="Submission / entity id" className={`${sel} w-56`} />
-        <button className="h-8 rounded-md border bg-zinc-900 px-3 text-sm text-white">Filter</button>
+        <button className="h-8 rounded-md border bg-primary px-3 text-sm text-primary-foreground">Filter</button>
         <Link href="/audit" className="text-xs text-muted-foreground hover:underline">
           Reset
         </Link>
@@ -58,7 +58,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
           Showing {events.length} of {total}
         </span>
       </form>
-      <div className="overflow-x-auto rounded-lg border bg-white">
+      <div className="overflow-x-auto rounded-lg border bg-card">
         <table className="w-full text-sm">
           <thead className="border-b bg-zinc-50 text-left text-xs text-muted-foreground">
             <tr>

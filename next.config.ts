@@ -5,6 +5,10 @@ const nextConfig: NextConfig = {
   // instead of Cache Components / PPR.
   cacheComponents: false,
   partialPrefetching: false,
+  experimental: {
+    // Optional image creatives (≤ 3MB, validated server-side) are uploaded through server actions.
+    serverActions: { bodySizeLimit: "4mb" },
+  },
   turbopack: {
     rules: {
       "*.css": {

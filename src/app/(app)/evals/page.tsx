@@ -37,7 +37,7 @@ export default async function EvalsPage() {
     return (
       <div>
         <PageHeader title="Evals" />
-        <div className="rounded-lg border border-dashed bg-white p-10 text-center text-sm text-muted-foreground">No eval results yet. Run <code>npm run eval</code>.</div>
+        <div className="rounded-lg border border-dashed bg-card p-10 text-center text-sm text-muted-foreground">No eval results yet. Run <code>npm run eval</code>.</div>
       </div>
     );
   }

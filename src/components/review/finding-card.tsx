@@ -45,7 +45,7 @@ export function FindingCard({ f, canDecide }: { f: FindingView; canDecide: boole
 
   const dismissed = f.decision === "DISMISSED";
   return (
-    <div id={`f-${f.id}`} className={cn("scroll-mt-20 rounded-lg border bg-white p-3 target:ring-2 target:ring-indigo-400", dismissed && "opacity-60")}>
+    <div id={`f-${f.id}`} className={cn("scroll-mt-20 rounded-lg border bg-card p-3 target:ring-2 target:ring-indigo-400", dismissed && "opacity-60")}>
       <div className="flex flex-wrap items-center gap-1.5">
         <SeverityBadge severity={f.severity} />
         <span className="font-mono text-xs font-semibold">{f.ruleCode}</span>
@@ -95,7 +95,7 @@ export function FindingCard({ f, canDecide }: { f: FindingView; canDecide: boole
             <form action={submit} className="space-y-2 rounded-md border bg-zinc-50 p-2">
               <input type="hidden" name="findingId" value={f.id} />
               <input type="hidden" name="decision" value="DISMISSED" />
-              <select name="dismissReason" required defaultValue="" className="h-8 w-full rounded-md border bg-white px-2 text-sm">
+              <select name="dismissReason" required defaultValue="" className="h-8 w-full rounded-md border bg-card px-2 text-sm">
                 <option value="" disabled>
                   Reason (required)…
                 </option>
@@ -105,7 +105,7 @@ export function FindingCard({ f, canDecide }: { f: FindingView; canDecide: boole
                   </option>
                 ))}
               </select>
-              <input name="dismissNote" placeholder="Note (required for Other)" maxLength={500} className="h-8 w-full rounded-md border bg-white px-2 text-sm" />
+              <input name="dismissNote" placeholder="Note (required for Other)" maxLength={500} className="h-8 w-full rounded-md border bg-card px-2 text-sm" />
               <div className="flex gap-2">
                 <Button type="submit" size="sm" disabled={pending}>
                   Confirm dismiss

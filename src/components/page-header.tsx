@@ -12,7 +12,7 @@ export function PageHeader({ title, description, actions }: { title: string; des
 
 export function Stat({ label, value, hint }: { label: string; value: React.ReactNode; hint?: React.ReactNode }) {
   return (
-    <div className="rounded-lg border bg-white p-4">
+    <div className="rounded-lg border bg-card p-4">
       <div className="text-xs text-muted-foreground">{label}</div>
       <div className="mt-1 text-2xl font-semibold tabular-nums">{value}</div>
       {hint && <div className="mt-1 text-xs text-muted-foreground">{hint}</div>}
@@ -22,7 +22,7 @@ export function Stat({ label, value, hint }: { label: string; value: React.React
 
 export function Panel({ title, children, actions, className }: { title?: React.ReactNode; children: React.ReactNode; actions?: React.ReactNode; className?: string }) {
   return (
-    <section className={`rounded-lg border bg-white ${className ?? ""}`}>
+    <section className={`rounded-lg border bg-card ${className ?? ""}`}>
       {title && (
         <div className="flex items-center justify-between gap-2 border-b px-4 py-2.5">
           <h2 className="text-sm font-semibold">{title}</h2>

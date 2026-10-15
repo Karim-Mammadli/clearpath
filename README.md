@@ -29,7 +29,7 @@ ClearPath Financial (fictional) markets personal loans, credit cards and mortgag
 
 1. **Shift-left self-check.** Submitters get rule-based + AI findings in seconds, with a suggested fix, and can resubmit before a reviewer ever opens the item. The dashboard counts "issues fixed before human review".
 2. **AI pre-highlighting.** Reviewers start from highlighted spans with citations instead of reading cold. They accept or dismiss each finding rather than hunting for issues.
-3. **Prioritized queue.** Risk score (from verified findings) + launch urgency + age + affiliate source + drift, replacing a spreadsheet sorted by whoever emailed last. A **Clear** risk filter acts as a low-risk fast lane (still a one-click human approval, still audited).
+3. **Auto-routing + prioritized queue.** New submissions are auto-assigned by routing rules (affiliate and mortgage content → the specialist; SMS → the TCPA reviewer), otherwise to the least-loaded reviewer, and can be reassigned in one click. The queue is sorted by risk score (from verified findings) + launch urgency + age + affiliate source + drift, replacing a spreadsheet sorted by whoever emailed last. A **Clear** risk filter acts as a low-risk fast lane (still a one-click human approval, still audited).
 4. **Diffs on resubmission.** Reviewers re-check only what changed. Findings dismissed on the previous version with the same rule + quote stay dismissed (marked "previously dismissed").
 5. **Fewer email round-trips.** Comments, decisions and versions live on the submission, and affiliates use the same portal.
 6. **Post-approval drift detection.** Today, affiliate changes after approval are invisible. Here they are caught and routed back into the queue automatically.
@@ -69,6 +69,7 @@ flowchart LR
   5. Least privilege: no tools, JSON only. The model can't change status, can't compute the score, and can't approve.
   6. Cross-check: if the heuristics fire but the model returns zero findings while rules found issues, the summary says **"Possible manipulation"**. A test simulates a fully manipulated model to show it can't clear S8.
   7. Evals measure injection resistance: flagged **and** the real violations still found.
+- **Images are grounded too.** An optional image creative (PNG/JPEG/GIF/WebP, ≤3MB, type checked by magic bytes, so no SVG) is transcribed by the model (`transcribe.v1`, low effort) into a labeled `[IMAGE TEXT]` section of the content. Rule-based checks, the reviewer model, verification and highlights then all run on text a human can compare against the image shown next to it. Instructions hidden *in* an image ("note to the AI reviewer…") are transcribed, not obeyed, and the same injection scan flags them. Identical images reuse their transcription ($0).
 - **Rules are data, versioned.** The prompt is assembled from active rules that apply to the submission's product, channel and source (affiliate-only rules). Each AI review stores `ruleSetVersion` + `promptVersion` (`reviewer.v1`) + model, so results are reproducible.
 - **Schema-validated output.** Zod schema → strict JSON schema (Structured Outputs). Output is re-validated with Zod; on failure there is **one** low-effort repair call (only the invalid JSON + error, not the content); after that, a graceful `PARTIAL` review.
 - **Caching.** Reviews are cached by `sha256(content | product | channel | source | ruleSetVersion | promptVersion | model)`, and identical resubmissions cost $0. The cache stores the raw model output and re-verifies it, so verification fixes apply to cached results too. Static instructions + rules come first in the prompt (with a `prompt_cache_key`) so provider prompt caching helps.
@@ -171,7 +172,7 @@ prisma/seed.ts            rules, users, affiliates, 18 submissions with history
 
 Full list in [`docs/ASSUMPTIONS.md`](docs/ASSUMPTIONS.md). The main ones:
 - ~5 compliance reviewers handling ~300 assets/week. Excel + email baseline of ~3 days to a first decision.
-- **Text content only in v1** (OCR for image ads later). Affiliates submit through the same portal as internal marketers.
+- **Text + optional image** in v1 (images stored in Postgres; object storage in production). Video/audio later. Affiliates submit through the same portal as internal marketers.
 - **AI assists, never approves.** Risk is computed in code, a human makes every decision, and CRITICAL overrides are audited.
 - Demo auth (role switcher). Real version: SSO/SAML. Authorization is enforced server-side regardless.
 - Rules are simplified and not legal advice. TCPA consent is assumed to be collected upstream.
@@ -187,7 +188,7 @@ Full list in [`docs/ASSUMPTIONS.md`](docs/ASSUMPTIONS.md). The main ones:
   - Any hidden content is flagged CRITICAL, which will need tuning on real pages.
   - The SSRF guard has a DNS-rebinding TOCTOU window (production fix: pin the resolved IP on the socket).
 - **Next:**
-  - OCR for image ads, plus video/audio transcripts.
+  - Video/audio transcripts; multi-image carousels; object storage for creatives.
   - SSO/SAML.
   - Scheduled re-checks of monitored URLs, and re-review of approved content when rules change.
   - A rule-authoring assistant that turns regulatory text into draft rules plus eval cases.
@@ -212,7 +213,7 @@ npm run dev                   # http://localhost:3000
 | Command | What it does |
 |---|---|
 | `npm run dev` / `build` / `start` | Next.js |
-| `npm run typecheck` / `lint` / `test` | tsc, ESLint, Vitest (44 tests: detectors, verification, scoring, injection, prompt assembly, mocked LLM path) |
+| `npm run typecheck` / `lint` / `test` | tsc, ESLint, Vitest (47 tests: detectors, verification, scoring, injection, prompt assembly, mocked LLM path) |
 | `npm run db:migrate` / `db:deploy` / `db:seed` | Prisma migrations and seed |
 | `npm run eval` | Eval harness (`-- --mode live\|mock`, `-- --record` to refresh the seed replay) |
 
@@ -224,6 +225,8 @@ npm run dev                   # http://localhost:3000
 | `DATABASE_URL_UNPOOLED` | Direct Neon URL (migrations) |
 | `OPENAI_API_KEY` | Optional. Without it the app runs in clearly labeled **Mock AI** mode. |
 | `AI_MODE` | Optional ops switch: `off` (rule-based only) or `mock` |
+
+**Customizing:** logo → put a file in `public/` and set `APP.logoSrc` in `src/lib/config.ts` (browser-tab icon: replace `src/app/favicon.ico`). Review routing rules → `ROUTING` in the same file. Light/dark theme → toggle in the top-right corner.
 
 ---
 
