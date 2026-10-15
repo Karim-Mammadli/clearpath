@@ -75,6 +75,7 @@ flowchart LR
 - **Caching.** Reviews are cached by `sha256(content | product | channel | source | ruleSetVersion | promptVersion | model)`, and identical resubmissions cost $0. The cache stores the raw model output and re-verifies it, so verification fixes apply to cached results too. Static instructions + rules come first in the prompt (with a `prompt_cache_key`) so provider prompt caching helps.
 - **Observability.** Every call is logged in `LlmCall`: purpose, model, prompt version, input/cached/output/reasoning tokens, cost (reasoning tokens are billed as output), latency, success/error. AI Ops shows spend, avg cost, p50/p95 latency, cache hit rate, repairs/failures, discarded findings, and precision by rule and source.
 - **Fallbacks.** No key → labeled Mock AI. Key present but timeout/error/over budget → rule-based only + banner. **The demo never breaks because of the LLM.** A **hard spend cap** ($3) and an hourly call limit protect the public URL from wallet-draining abuse.
+- **Compliant rewrite with self-verification.** "Generate compliant rewrite" asks the model (`rewrite.v1`) to fix every open finding while keeping the tone and channel format. It may use only approved ClearPath facts and must put `[PLACEHOLDERS]` in place of any rate/fee/term it doesn't know. The rewrite is then **re-run through the full pipeline** and shows "Rewrite passes all checks ✓" or the remaining issues. A human edits/fills placeholders and submits it as the next version (source `REWRITE`, audited). On S1: 7 findings → 0, ~19s, ~$0.015.
 - **Human in the loop + feedback.** Dismissals require a reason. Per-rule accept rates show on the Rules and AI Ops pages, and rules with a low accept rate get a **"Needs tuning"** badge. That's the hook for few-shot learning from dismissals (next steps).
 - **SSRF-safe URL fetching.** http(s) only, no credentials in URLs, private/loopback/link-local/CGNAT addresses blocked (re-checked on every redirect), 10s timeout, 2MB cap. **CSV export** neutralizes spreadsheet formula injection.
 
@@ -177,7 +178,7 @@ Full list in [`docs/ASSUMPTIONS.md`](docs/ASSUMPTIONS.md). The main ones:
 - Demo auth (role switcher). Real version: SSO/SAML. Authorization is enforced server-side regardless.
 - Rules are simplified and not legal advice. TCPA consent is assumed to be collected upstream.
 - Monitoring is on demand ("Check now" / "Check all"), not scheduled.
-- Compliant-rewrite generation was cut for time. Each finding has a concrete suggested fix instead.
+- The compliant rewrite uses `[PLACEHOLDERS]` for any rate/fee/term it doesn't know; only a short list of approved ClearPath facts (address, NMLS #, standard disclaimers) may be filled in by the AI.
 
 ## Trade-offs and what I'd build next
 
@@ -193,7 +194,6 @@ Full list in [`docs/ASSUMPTIONS.md`](docs/ASSUMPTIONS.md). The main ones:
   - Scheduled re-checks of monitored URLs, and re-review of approved content when rules change.
   - A rule-authoring assistant that turns regulatory text into draft rules plus eval cases.
   - Few-shot learning from dismissed findings: add recent dismissals as negative examples, bump the rule-set version, re-run evals before activating.
-  - Compliant-rewrite generation with automatic re-check.
   - Slack/email notifications.
   - Integrations with HubSpot/Braze/ad platforms so content is checked where it's authored.
   - Per-state rules (state lending/licensing), reviewer workload balancing and SLAs.

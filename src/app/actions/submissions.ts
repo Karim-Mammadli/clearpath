@@ -134,7 +134,8 @@ export async function resubmit(_prev: FormState, formData: FormData): Promise<Fo
 
   const next = await nextVersionNumber(sub.id);
   try {
-    await createVersionAndReview({ submissionId: sub.id, versionNumber: next, raw: content.data, createdById: user.id, source: "SUBMITTER", image });
+    const source = formData.get("fromRewrite") === "1" ? "REWRITE" : "SUBMITTER";
+    await createVersionAndReview({ submissionId: sub.id, versionNumber: next, raw: content.data, createdById: user.id, source, image });
   } catch (e) {
     if (e instanceof ContentTooLongError) return { error: e.message };
     throw e;

@@ -11,6 +11,7 @@ import { DecisionBar } from "@/components/review/decision-bar";
 import { DiffView } from "@/components/review/diff-view";
 import { FindingCard, type FindingView } from "@/components/review/finding-card";
 import { ResubmitForm } from "@/components/review/resubmit-form";
+import { RewritePanel } from "@/components/review/rewrite-panel";
 import { Button } from "@/components/ui/button";
 import { canSubmit, canViewSubmission, getCurrentUser, isReviewer } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -104,6 +105,7 @@ export default async function SubmissionPage({ params, searchParams }: { params:
   const groups = (["CRITICAL", "HIGH", "MEDIUM", "LOW"] as const).map((sev) => ({ sev, items: findings.filter((f) => f.severity === sev) })).filter((g) => g.items.length);
   const canResubmit = canSubmit(user) && isCurrent && (sub.status === "IN_REVIEW" || sub.status === "CHANGES_REQUESTED" || sub.status === "DRIFT_DETECTED");
   const editable = editableText(version.contentText);
+  const hasOpenFindings = version.findings.some((f) => f.decision !== "DISMISSED");
 
   return (
     <div className="space-y-4">
@@ -246,6 +248,12 @@ export default async function SubmissionPage({ params, searchParams }: { params:
                   </p>
                 </div>
               </div>
+            </Panel>
+          )}
+
+          {isCurrent && hasOpenFindings && (sub.status === "IN_REVIEW" || sub.status === "CHANGES_REQUESTED" || sub.status === "DRIFT_DETECTED") && (
+            <Panel title="Compliant rewrite (AI)">
+              <RewritePanel submissionId={sub.id} canSubmitVersion={canResubmit} />
             </Panel>
           )}
 

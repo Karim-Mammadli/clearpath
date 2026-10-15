@@ -20,7 +20,8 @@ Product, scope and technical assumptions made for v1. These feed the README and 
 - **Rule library is read-only in the UI** (with per-rule stats). Editing rules would bump the rule-set version; the data model already stores the rule-set version on every AI review.
 - **Affiliate monitoring runs on demand** ("Check now" / "Check all") rather than on a schedule (Vercel cron is out of scope for the deadline). Monitored URLs are created automatically when an affiliate/landing page submitted by URL is approved.
 - **Demo affiliate pages are hosted inside the app** (`/demo/affiliates/*`) so the monitoring demo doesn't depend on external sites. The admin can "Simulate affiliate edit" and "Reset demo".
-- **Compliant rewrite** (AI-generated fixed copy) was cut for time. Every finding already carries a concrete suggested fix; the submitter edits and resubmits, and the full pipeline re-runs on the new version.
+- **Compliant rewrite** is generated on demand and re-checked before it can be submitted; it never auto-submits. It only rewrites the copy (not attached images or hidden content), uses placeholders for unknown rates/terms, and may only use a fixed list of approved ClearPath facts.
+- **Assignment is manual** (see below) and **channel drives rule applicability** (e.g. CAN-SPAM only for email, TCPA only for SMS); the submit form shows which rules apply.
 - **Quote matching** is exact, then whitespace/case/typographic-quote normalized. No fuzzy matching: a quote that isn't really in the text is discarded.
 
 ## AI & cost
