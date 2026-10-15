@@ -150,6 +150,8 @@ evals/
 
 **If a milestone runs >30 min over, cut in this order:** (1) compliant rewrite, (2) affiliate monitoring → keep only demo pages + "Check now", (3) dashboard charts → plain KPI numbers, (4) synthetic eval variants. **Never cut:** M3 grounding/verification, injection defense, AI Ops logging, evals with real numbers, README, a working live URL.
 
+**Cuts made during the build (Oct 15, with the human):** compliant rewrite (cut #1) — every finding carries a suggested fix instead; the API budget is $5, so an `LLM.budgetUsd` spend cap + hourly limit guard the public demo, dev/tests default to mock, and seeded reviews replay recorded real model output (`npm run eval -- --record`) instead of re-calling the model.
+
 **Simplifications already accepted for the deadline:** rule library is read-only in the UI (with per-rule stats); quote matching is exact + whitespace/case-normalized only (no fuzzy); no low-risk "fast lane" UI (use a risk filter instead); CSV export of audit log only; 6 synthetic eval variants, not 10.
 
 ## Quality bar

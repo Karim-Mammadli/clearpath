@@ -58,5 +58,8 @@
     "esbuild": true,
     "prisma": true,
     "unrs-resolver": true
+  },
+  "engines": {
+    "node": ">=22.12"
   }
 }
