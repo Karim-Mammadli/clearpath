@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ShieldCheck } from "lucide-react";
+import { BrandMark } from "@/components/brand-mark";
 import { RoleSwitcher } from "@/components/role-switcher";
 import { SidebarNav, type NavItem } from "@/components/sidebar-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -39,12 +39,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <aside className="border-b bg-card md:sticky md:top-0 md:h-screen md:w-60 md:shrink-0 md:border-r md:border-b-0">
         <div className="flex h-full flex-col gap-4 p-3">
           <Link href="/" className="flex items-center gap-2 px-2 pt-1">
-            {APP.logoSrc ? (
-              // eslint-disable-next-line @next/next/no-img-element -- static brand asset from /public, any size/format
-              <img src={APP.logoSrc} alt="" className="h-7 w-auto max-w-[2.5rem] object-contain" />
-            ) : (
-              <ShieldCheck className="size-5 text-emerald-600" />
-            )}
+            <BrandMark />
             <div className="leading-tight">
               <div className="text-sm font-semibold">{APP.name}</div>
               <div className="text-[11px] text-muted-foreground">{APP.company}</div>

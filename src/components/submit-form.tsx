@@ -24,7 +24,7 @@ function SubmitButton({ ruleHint }: { ruleHint: string }) {
   );
 }
 
-export function SubmitForm({ samples, ruleCounts }: { samples: SampleOpt[]; ruleCounts: Record<string, number> }) {
+export function SubmitForm({ samples, rulesByKey }: { samples: SampleOpt[]; rulesByKey: Record<string, { code: string; title: string }[]> }) {
   const [state, action] = useActionState<FormState, FormData>(createSubmission, undefined);
   const [mode, setMode] = useState<"text" | "url">("text");
   const [product, setProduct] = useState<string>("PERSONAL_LOAN");
@@ -48,7 +48,8 @@ export function SubmitForm({ samples, ruleCounts }: { samples: SampleOpt[]; rule
   }
 
   const key = `${product}:${channel}`;
-  const ruleHint = `Checking against ${ruleCounts[key] ?? "the applicable"} rules.`;
+  const applicable = rulesByKey[key] ?? [];
+  const ruleHint = `Checking against ${applicable.length} rules.`;
 
   return (
     <form ref={formRef} action={action} className="space-y-5">
@@ -92,6 +93,20 @@ export function SubmitForm({ samples, ruleCounts }: { samples: SampleOpt[]; rule
           </select>
         </label>
       </div>
+
+      <details className="rounded-md border bg-muted/40 px-3 py-2 text-xs">
+        <summary className="cursor-pointer text-muted-foreground">
+          <span className="font-medium text-foreground">{applicable.length} rules apply</span> to {label(product)} · {label(channel)}. Product and channel decide which
+          regulations are checked (e.g. CAN-SPAM only for email, TCPA only for SMS, endorsement disclosures for social/affiliate content).
+        </summary>
+        <ul className="mt-2 grid gap-x-4 gap-y-0.5 sm:grid-cols-2">
+          {applicable.map((r) => (
+            <li key={r.code}>
+              <span className="font-mono font-semibold">{r.code}</span> <span className="text-muted-foreground">{r.title}</span>
+            </li>
+          ))}
+        </ul>
+      </details>
 
       <div className="space-y-2">
         <div className="inline-flex rounded-md border bg-card p-0.5 text-sm">

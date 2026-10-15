@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ShieldAlert } from "lucide-react";
 import { RiskBadge, StatusBadge } from "@/components/badges";
+import { AssignSelect } from "@/components/review/assign-select";
 import { label } from "@/lib/domain";
 import type { SubmissionRow } from "@/lib/queries";
 
@@ -20,7 +21,18 @@ function launch(d: Date | null) {
   return <span className={days <= 2 ? "font-medium text-red-700" : days <= 7 ? "text-amber-700" : ""}>{text}{days >= 0 && days <= 7 ? ` (${days}d)` : ""}</span>;
 }
 
-export function SubmissionTable({ rows, showPriority = false, empty = "Nothing here yet." }: { rows: SubmissionRow[]; showPriority?: boolean; empty?: string }) {
+export function SubmissionTable({
+  rows,
+  showPriority = false,
+  empty = "Nothing here yet.",
+  reviewers,
+}: {
+  rows: SubmissionRow[];
+  showPriority?: boolean;
+  empty?: string;
+  /** When provided (reviewer views), the Assignee column becomes an inline assign dropdown. */
+  reviewers?: { id: string; name: string }[];
+}) {
   if (rows.length === 0) {
     return <div className="rounded-lg border border-dashed bg-card p-10 text-center text-sm text-muted-foreground">{empty}</div>;
   }
@@ -73,7 +85,13 @@ export function SubmissionTable({ rows, showPriority = false, empty = "Nothing h
               </td>
               <td className="px-3 py-2 text-xs whitespace-nowrap">{launch(r.launchDate)}</td>
               <td className="px-3 py-2 text-xs text-muted-foreground">{age(r.createdAt)}</td>
-              <td className="px-3 py-2 text-xs whitespace-nowrap">{r.assignee ?? <span className="text-muted-foreground">Unassigned</span>}</td>
+              <td className="px-3 py-2 text-xs whitespace-nowrap">
+                {reviewers ? (
+                  <AssignSelect key={`${r.id}:${r.assigneeId ?? ""}`} submissionId={r.id} current={r.assigneeId} reviewers={reviewers} compact />
+                ) : (
+                  (r.assignee ?? <span className="text-muted-foreground">Unassigned</span>)
+                )}
+              </td>
             </tr>
           ))}
         </tbody>

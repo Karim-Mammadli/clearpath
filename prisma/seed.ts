@@ -7,7 +7,6 @@ import { db } from "@/lib/db";
 import { extractContent } from "@/lib/extract";
 import { computeCostUsd, type LlmUsage } from "@/lib/llm/client";
 import { refreshPriority, reviewVersion } from "@/lib/review/pipeline";
-import { routeSubmission } from "@/lib/routing";
 import { RULE_CATALOG } from "@/lib/rules/catalog";
 import { getSample, type Sample } from "@/lib/samples";
 import type { Prisma } from "@/generated/prisma/client";
@@ -127,7 +126,7 @@ async function createSubmission(opts: {
       status: "IN_REVIEW",
       submitterId: opts.submitterId,
       affiliateId: s.affiliateSlug === "loanfinderhub" ? "aff_lfh" : s.affiliateSlug === "creditcompass" ? "aff_cc" : null,
-      assignedReviewerId: opts.assignedReviewerId ?? (await routeSubmission({ product: s.product, channel: s.channel, affiliateId: s.affiliateSlug === "loanfinderhub" ? "aff_lfh" : s.affiliateSlug === "creditcompass" ? "aff_cc" : null })).reviewerId,
+      assignedReviewerId: opts.assignedReviewerId,
       launchDate: opts.launchDate ?? null,
       sourceUrl: opts.sourceUrl,
       notes: opts.notes,

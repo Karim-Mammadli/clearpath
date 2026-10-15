@@ -13,8 +13,9 @@ export default async function SubmitPage() {
   const rules = await db.rule.findMany({ where: { active: true } });
   const isAffiliate = user.role === "AFFILIATE";
 
-  const ruleCounts: Record<string, number> = {};
-  for (const p of PRODUCTS) for (const c of CHANNELS) ruleCounts[`${p}:${c}`] = getApplicableRules(rules, { product: p, channel: c, isAffiliate }).length;
+  const rulesByKey: Record<string, { code: string; title: string }[]> = {};
+  for (const p of PRODUCTS)
+    for (const c of CHANNELS) rulesByKey[`${p}:${c}`] = getApplicableRules(rules, { product: p, channel: c, isAffiliate }).map((r) => ({ code: r.code, title: r.title }));
 
   const samples = SAMPLES.filter((s) => !s.synthetic && (isAffiliate ? s.source === "AFFILIATE" : s.source === "FIRST_PARTY" || user.role === "ADMIN")).map((s) => ({
     id: s.id,
@@ -34,7 +35,7 @@ export default async function SubmitPage() {
         description="Paste content or a landing-page URL. Rule-based checks and the AI pre-reviewer run immediately, so you can fix issues before a compliance reviewer opens it. AI findings are advisory: a human reviewer always makes the decision."
       />
       <div className="rounded-lg border bg-card p-5">
-        <SubmitForm samples={samples} ruleCounts={ruleCounts} />
+        <SubmitForm samples={samples} rulesByKey={rulesByKey} />
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import { useRef, useTransition } from "react";
 import { toast } from "sonner";
 import { assignReviewer } from "@/app/actions/submissions";
 
-export function AssignSelect({ submissionId, current, reviewers }: { submissionId: string; current: string | null; reviewers: { id: string; name: string }[] }) {
+export function AssignSelect({ submissionId, current, reviewers, compact = false }: { submissionId: string; current: string | null; reviewers: { id: string; name: string }[]; compact?: boolean }) {
   const ref = useRef<HTMLFormElement>(null);
   const [pending, start] = useTransition();
   return (
@@ -23,9 +23,10 @@ export function AssignSelect({ submissionId, current, reviewers }: { submissionI
       className="flex items-center gap-2 text-xs text-muted-foreground"
     >
       <input type="hidden" name="submissionId" value={submissionId} />
-      <label htmlFor="assignee">Assignee</label>
+      {!compact && <label htmlFor={`assignee-${submissionId}`}>Assignee</label>}
       <select
-        id="assignee"
+        id={`assignee-${submissionId}`}
+        aria-label="Assignee"
         name="assigneeId"
         defaultValue={current ?? ""}
         disabled={pending}

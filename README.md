@@ -29,7 +29,7 @@ ClearPath Financial (fictional) markets personal loans, credit cards and mortgag
 
 1. **Shift-left self-check.** Submitters get rule-based + AI findings in seconds, with a suggested fix, and can resubmit before a reviewer ever opens the item. The dashboard counts "issues fixed before human review".
 2. **AI pre-highlighting.** Reviewers start from highlighted spans with citations instead of reading cold. They accept or dismiss each finding rather than hunting for issues.
-3. **Auto-routing + prioritized queue.** New submissions are auto-assigned by routing rules (affiliate and mortgage content → the specialist; SMS → the TCPA reviewer), otherwise to the least-loaded reviewer, and can be reassigned in one click. The queue is sorted by risk score (from verified findings) + launch urgency + age + affiliate source + drift, replacing a spreadsheet sorted by whoever emailed last. A **Clear** risk filter acts as a low-risk fast lane (still a one-click human approval, still audited).
+3. **Prioritized queue with one-click assignment.** Reviewers assign or reassign items to any teammate from the queue, the dashboard or the submission page, and filter by assignee to see each reviewer's workload. The queue is sorted by risk score (from verified findings) + launch urgency + age + affiliate source + drift, replacing a spreadsheet sorted by whoever emailed last. A **Clear** risk filter acts as a low-risk fast lane (still a one-click human approval, still audited).
 4. **Diffs on resubmission.** Reviewers re-check only what changed. Findings dismissed on the previous version with the same rule + quote stay dismissed (marked "previously dismissed").
 5. **Fewer email round-trips.** Comments, decisions and versions live on the submission, and affiliates use the same portal.
 6. **Post-approval drift detection.** Today, affiliate changes after approval are invisible. Here they are caught and routed back into the queue automatically.
@@ -226,7 +226,7 @@ npm run dev                   # http://localhost:3000
 | `OPENAI_API_KEY` | Optional. Without it the app runs in clearly labeled **Mock AI** mode. |
 | `AI_MODE` | Optional ops switch: `off` (rule-based only) or `mock` |
 
-**Customizing:** logo → put a file in `public/` and set `APP.logoSrc` in `src/lib/config.ts` (browser-tab icon: replace `src/app/favicon.ico`). Review routing rules → `ROUTING` in the same file. Light/dark theme → toggle in the top-right corner.
+**Customizing:** brand icons live in `src/app/icon.svg`, `favicon.ico`, `apple-icon.png` and `public/icon-*.png`; the sidebar mark is `src/components/brand-mark.tsx`. Light/dark theme → toggle in the top-right corner.
 
 ---
 

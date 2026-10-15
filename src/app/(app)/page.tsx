@@ -7,6 +7,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { getCurrentUser, isReviewer, submissionScope } from "@/lib/auth";
 import { dashboardMetrics, formatDuration } from "@/lib/metrics";
 import { listSubmissions } from "@/lib/queries";
+import { db } from "@/lib/db";
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ denied?: string }> }) {
   const user = await getCurrentUser();
@@ -41,7 +42,12 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const det = m.precision.DETERMINISTIC;
   const pct = (p?: { accepted: number; dismissed: number }) =>
     p && p.accepted + p.dismissed > 0 ? `${Math.round((100 * p.accepted) / (p.accepted + p.dismissed))}%` : "—";
-  const mine = await listSubmissions({ assignedReviewerId: user.id, status: { in: ["IN_REVIEW", "DRIFT_DETECTED"] } }, [{ priorityScore: "desc" }]);
+  const open = { status: { in: ["IN_REVIEW", "DRIFT_DETECTED"] as ("IN_REVIEW" | "DRIFT_DETECTED")[] } };
+  const [mine, unassigned, reviewers] = await Promise.all([
+    listSubmissions({ assignedReviewerId: user.id, ...open }, [{ priorityScore: "desc" }]),
+    listSubmissions({ assignedReviewerId: null, ...open }, [{ priorityScore: "desc" }]),
+    db.user.findMany({ where: { role: { in: ["REVIEWER", "ADMIN"] } }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -82,7 +88,10 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         </Panel>
       </div>
       <Panel title="Assigned to me">
-        <SubmissionTable rows={mine} showPriority empty="Nothing assigned to you. Pick items from the queue." />
+        <SubmissionTable rows={mine} showPriority reviewers={reviewers} empty="Nothing assigned to you. Pick items from the queue." />
+      </Panel>
+      <Panel title={`Unassigned (${unassigned.length}): needs an owner`}>
+        <SubmissionTable rows={unassigned} showPriority reviewers={reviewers} empty="Every open item has an owner." />
       </Panel>
     </div>
   );

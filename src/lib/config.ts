@@ -24,20 +24,9 @@ export const REVIEW = {
 export const APP = {
   name: "ClearPath Review",
   company: "ClearPath Financial",
-  // Custom logo: put a file in /public (e.g. public/logo.svg or logo.png) and set its path here.
-  // null → default shield icon. The browser-tab icon is src/app/favicon.ico (replace the file).
-  logoSrc: null as string | null,
+  // Brand assets: src/app/icon.svg, favicon.ico, apple-icon.png (Next.js file conventions),
+  // public/icon-192.png + icon-512.png (web manifest), sidebar mark in src/components/brand-mark.tsx.
   disclaimer:
     "Demo application. Rules are simplified summaries for demonstration and are not legal advice.",
 };
 
-/**
- * Review routing: new submissions are auto-assigned by the first matching rule; otherwise to the
- * reviewer with the fewest open items (load balancing). Reviewers can reassign at any time.
- * `reviewerId` refers to seeded users (u_sam = Sam Okafor, u_elena = Elena Petrova).
- */
-export const ROUTING: { label: string; when: { product?: string; channel?: string; affiliate?: boolean }; reviewerId: string }[] = [
-  { label: "Affiliate content → Elena Petrova (affiliate program specialist)", when: { affiliate: true }, reviewerId: "u_elena" },
-  { label: "Mortgage prequal → Elena Petrova (mortgage licensing)", when: { product: "MORTGAGE_PREQUAL" }, reviewerId: "u_elena" },
-  { label: "SMS → Sam Okafor (TCPA)", when: { channel: "SMS" }, reviewerId: "u_sam" },
-];

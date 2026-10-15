@@ -12,7 +12,6 @@ import { FetchBlockedError, safeFetchHtml } from "@/lib/fetch";
 import { appOrigin } from "@/lib/origin";
 import { refreshPriority } from "@/lib/review/pipeline";
 import { MAX_IMAGE_BYTES, sniffImageMime } from "@/lib/review/image";
-import { routeSubmission } from "@/lib/routing";
 import { ContentTooLongError, createVersionAndReview, nextVersionNumber, editableText, type ImageInput, type NewImage } from "@/lib/versions";
 
 /** Reads an optional uploaded image; validates size and real file type (magic bytes). */
@@ -87,7 +86,6 @@ export async function createSubmission(_prev: FormState, formData: FormData): Pr
 
   const launchDate = v.launchDate ? new Date(`${v.launchDate}T12:00:00Z`) : null;
   const affiliateId = user.role === "AFFILIATE" ? user.affiliateId : null;
-  const route = await routeSubmission({ product: v.product, channel: v.channel, affiliateId });
   const sub = await db.submission.create({
     data: {
       title: v.title,
@@ -96,7 +94,6 @@ export async function createSubmission(_prev: FormState, formData: FormData): Pr
       status: "IN_REVIEW",
       submitterId: user.id,
       affiliateId,
-      assignedReviewerId: route.reviewerId,
       launchDate: launchDate && !Number.isNaN(launchDate.getTime()) ? launchDate : null,
       sourceUrl: v.url || null,
       notes: v.notes || null,
@@ -108,9 +105,6 @@ export async function createSubmission(_prev: FormState, formData: FormData): Pr
     await db.submission.delete({ where: { id: sub.id } });
     if (e instanceof ContentTooLongError) return { error: e.message };
     throw e;
-  }
-  if (route.reviewerId) {
-    await writeAudit({ actorId: null, action: "SUBMISSION_ASSIGNED", entityType: "Submission", entityId: sub.id, metadata: { assignee: route.reviewerId, reason: route.reason } });
   }
   redirect(`/submissions/${sub.id}?new=1`);
 }
@@ -218,7 +212,7 @@ export async function assignReviewer(formData: FormData) {
   }
   await db.submission.update({ where: { id: submissionId }, data: { assignedReviewerId: assigneeId } });
   await writeAudit({ actorId: user.id, action: "SUBMISSION_ASSIGNED", entityType: "Submission", entityId: submissionId, metadata: { assignee: assigneeId } });
-  revalidatePath(`/submissions/${submissionId}`);
+  for (const p of [`/submissions/${submissionId}`, "/queue", "/submissions", "/"]) revalidatePath(p);
 }
 
 const DecisionSchema = z.object({

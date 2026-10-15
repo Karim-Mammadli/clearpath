@@ -3,7 +3,6 @@ import type { Prisma } from "@/generated/prisma/client";
 import { PageHeader } from "@/components/page-header";
 import { SubmissionTable } from "@/components/submission-table";
 import { isReviewer, requireRole } from "@/lib/auth";
-import { ROUTING } from "@/lib/config";
 import { db } from "@/lib/db";
 import { CHANNELS, PRODUCTS, RISK_LEVELS, label } from "@/lib/domain";
 import { listSubmissions } from "@/lib/queries";
@@ -54,8 +53,7 @@ export default async function QueuePage({ searchParams }: { searchParams: Promis
         title="Review queue"
         description={
           <>
-            Sorted by priority = risk score + launch urgency + age in queue + affiliate source + drift. New submissions are auto-assigned:{" "}
-            {ROUTING.map((r) => r.label).join("; ")}; otherwise to the least-loaded reviewer. Reassign from any submission page.
+            Sorted by priority = risk score + launch urgency + age in queue + affiliate source + drift. Assign items to a reviewer straight from the Assignee column (or on the submission page); filter by assignee to see each reviewer&apos;s queue.
           </>
         }
       />
@@ -120,7 +118,7 @@ export default async function QueuePage({ searchParams }: { searchParams: Promis
           Reset
         </Link>
       </form>
-      <SubmissionTable rows={rows} showPriority empty="Queue is empty for these filters." />
+      <SubmissionTable rows={rows} showPriority reviewers={reviewers} empty="Queue is empty for these filters." />
     </div>
   );
 }

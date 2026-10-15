@@ -4,6 +4,7 @@ import { AlertTriangle, ExternalLink, ShieldAlert, Sparkles } from "lucide-react
 import { addComment } from "@/app/actions/submissions";
 import { ModeBadge, Pill, RiskBadge, StatusBadge } from "@/components/badges";
 import { Panel } from "@/components/page-header";
+import { Avatar } from "@/components/avatar";
 import { AssignSelect } from "@/components/review/assign-select";
 import { ContentView } from "@/components/review/content-view";
 import { DecisionBar } from "@/components/review/decision-bar";
@@ -258,18 +259,22 @@ export default async function SubmissionPage({ params, searchParams }: { params:
           <Panel title={`Comments (${sub.comments.length})`}>
             <div className="space-y-3">
               {sub.comments.map((c) => (
-                <div key={c.id} className="text-sm">
-                  <div className="text-xs text-muted-foreground">
-                    <span className="font-medium text-zinc-800">{c.author.name}</span> · {label(c.author.role)} · {fmt(c.createdAt)}
+                <div key={c.id} className="flex gap-3 text-sm">
+                  <Avatar name={c.author.name} role={c.author.role} />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground">{c.author.name}</span> · {label(c.author.role)} · {fmt(c.createdAt)}
+                    </div>
+                    <p className="mt-0.5 whitespace-pre-wrap break-words">{c.body}</p>
                   </div>
-                  <p className="mt-0.5 whitespace-pre-wrap">{c.body}</p>
                 </div>
               ))}
               {sub.comments.length === 0 && <p className="text-sm text-muted-foreground">No comments yet.</p>}
               <form action={addComment} className="flex gap-2 pt-2">
                 <input type="hidden" name="submissionId" value={sub.id} />
                 <input type="hidden" name="versionId" value={version.id} />
-                <input name="body" required maxLength={4000} placeholder="Add a comment…" className="h-9 flex-1 rounded-md border px-3 text-sm" />
+                <Avatar name={user.name} role={user.role} />
+                <input name="body" required maxLength={4000} placeholder="Add a comment…" className="h-9 flex-1 rounded-md border bg-card px-3 text-sm" />
                 <Button type="submit" variant="outline">
                   Comment
                 </Button>
