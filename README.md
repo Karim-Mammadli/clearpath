@@ -213,7 +213,7 @@ npm run dev                   # http://localhost:3000
 | Command | What it does |
 |---|---|
 | `npm run dev` / `build` / `start` | Next.js |
-| `npm run typecheck` / `lint` / `test` | tsc, ESLint, Vitest (47 tests: detectors, verification, scoring, injection, prompt assembly, mocked LLM path) |
+| `npm run typecheck` / `lint` / `test` | tsc, ESLint, Vitest (49 tests: detectors, verification, scoring, injection, prompt assembly, mocked LLM path) |
 | `npm run db:migrate` / `db:deploy` / `db:seed` | Prisma migrations and seed |
 | `npm run eval` | Eval harness (`-- --mode live\|mock`, `-- --record` to refresh the seed replay) |
 
