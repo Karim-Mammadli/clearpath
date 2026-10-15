@@ -12,6 +12,7 @@ import { FetchBlockedError, safeFetchHtml } from "@/lib/fetch";
 import { appOrigin } from "@/lib/origin";
 import { refreshPriority } from "@/lib/review/pipeline";
 import { MAX_IMAGE_BYTES, sniffImageMime } from "@/lib/review/image";
+import { findPlaceholders } from "@/lib/review/rewrite";
 import { ContentTooLongError, createVersionAndReview, nextVersionNumber, editableText, type ImageInput, type NewImage } from "@/lib/versions";
 
 /** Reads an optional uploaded image; validates size and real file type (magic bytes). */
@@ -131,6 +132,9 @@ export async function resubmit(_prev: FormState, formData: FormData): Promise<Fo
   const image: ImageInput = img.image ? { kind: "new", image: img.image } : !removeImage && current?.image ? { kind: "keep", fromVersionId: current.id } : null;
   const editable = current ? editableText(current.contentText).trim() : "";
   if (!img.image && !removeImage && editable === content.data.trim()) return { error: "Nothing changed. Edit the content or attach a new image before resubmitting." };
+
+  const unfilled = findPlaceholders(content.data);
+  if (unfilled.length) return { error: `Fill in the placeholders before submitting: ${unfilled.join(", ")}` };
 
   const next = await nextVersionNumber(sub.id);
   try {

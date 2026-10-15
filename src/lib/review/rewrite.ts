@@ -109,3 +109,5 @@ export async function generateRewrite(
   if (!value.rewritten_text.trim()) return { ok: false, reason: "The AI returned an empty rewrite. Try again." };
   return { ok: true, value };
 }
+
+export { findPlaceholders, PLACEHOLDER_RE } from "./placeholders";

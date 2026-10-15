@@ -7,6 +7,7 @@ import { generateCompliantRewrite, type RewriteResult } from "@/app/actions/rewr
 import { resubmit, type FormState } from "@/app/actions/submissions";
 import { SeverityBadge } from "@/components/badges";
 import { Button } from "@/components/ui/button";
+import { findPlaceholders } from "@/lib/review/placeholders";
 
 function SubmitRewrite() {
   const { pending } = useFormStatus();
@@ -70,6 +71,12 @@ export function RewritePanel({ submissionId, canSubmitVersion }: { submissionId:
             </ul>
           )}
           {result.notes && <p className="text-xs text-muted-foreground">Note: {result.notes}</p>}
+          {findPlaceholders(result.rewritten).length > 0 && (
+            <p className="rounded-md border border-dashed border-amber-300 px-3 py-2 text-xs text-amber-900">
+              Fill in {findPlaceholders(result.rewritten).join(", ")} with the real values. The re-check treats placeholders as missing, so any remaining rate/fee
+              findings above usually clear once they&apos;re filled. Submitting with unfilled placeholders is blocked, and the full pipeline runs again on submit.
+            </p>
+          )}
 
           {canSubmitVersion ? (
             <form action={action} className="space-y-2">
