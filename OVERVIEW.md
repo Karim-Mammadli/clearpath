@@ -26,6 +26,31 @@
 - **AI Ops** (every LLM call's cost and latency), **Evals** (per-rule precision/recall), **audit log** with CSV export.
 - **Roles** (marketer, affiliate, reviewer, admin) are enforced server-side. Affiliates only see their own work.
 
+## How it works
+
+```mermaid
+flowchart TD
+  A["Submission<br/>text · URL · image"] --> B["Extract<br/>keep + label hidden text,<br/>transcribe image text"]
+  B --> C["Applicable rules<br/>product × channel × source<br/>(versioned)"]
+  C --> D["Rule-based detectors<br/>exact offsets"]
+  B --> E["Injection scan<br/>heuristics"]
+  C --> F["LLM reviewer<br/>strict JSON schema, no tools,<br/>content in nonce-delimited block"]
+  F -->|invalid output| R["1 repair retry"]
+  R -->|still invalid / timeout| P["Fallback: rule-based only<br/>+ banner"]
+  F --> G["Verify grounding<br/>rule must apply,<br/>quote must exist"]
+  G -->|ungrounded| X[("Discarded + counted<br/>on AI Ops")]
+  D --> H["Merge + dedupe"]
+  E --> H
+  G --> H
+  P --> H
+  H --> S["Risk score<br/>computed in code"]
+  S --> U["Human reviewer<br/>confirm / dismiss / decide"]
+  U -->|changes requested| W["Submitter fixes<br/>or AI rewrite → re-check"]
+  W --> A
+  U -->|approved| L["Approval ID +<br/>exact copy to launch"]
+  L -.->|affiliate page changes| A
+```
+
 ## AI design highlights
 
 - **Hybrid:** regex rules for objective checks, the LLM for judgment calls. Offsets are computed in code, never by the model.
