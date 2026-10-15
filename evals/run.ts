@@ -21,6 +21,7 @@ import { SAMPLES, type Sample } from "@/lib/samples";
 const args = process.argv.slice(2);
 const hybridMode = (args.includes("--mode") ? args[args.indexOf("--mode") + 1] : aiMode() === "live" ? "live" : "mock") as "live" | "mock";
 const record = args.includes("--record");
+const outFile = args.includes("--out") ? args[args.indexOf("--out") + 1] : null; // CI writes here instead of evals/results/
 const ROOT = path.join(__dirname, "..");
 
 type SampleResult = {
@@ -162,10 +163,14 @@ async function pool<T, R>(items: T[], n: number, fn: (t: T) => Promise<R>): Prom
     },
   };
 
-  const dir = path.join(ROOT, "evals", "results");
-  mkdirSync(dir, { recursive: true });
-  writeFileSync(path.join(dir, "latest.json"), JSON.stringify(result, null, 2) + "\n");
-  writeFileSync(path.join(dir, `${result.generatedAt.replace(/[:.]/g, "-")}.json`), JSON.stringify(result, null, 2) + "\n");
+  if (outFile) {
+    writeFileSync(outFile, JSON.stringify(result, null, 2) + "\n");
+  } else {
+    const dir = path.join(ROOT, "evals", "results");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(path.join(dir, "latest.json"), JSON.stringify(result, null, 2) + "\n");
+    writeFileSync(path.join(dir, `${result.generatedAt.replace(/[:.]/g, "-")}.json`), JSON.stringify(result, null, 2) + "\n");
+  }
   if (record) {
     mkdirSync(path.join(ROOT, "prisma", "seed-data"), { recursive: true });
     writeFileSync(path.join(ROOT, "prisma", "seed-data", "llm-replay.json"), JSON.stringify(replay, null, 2) + "\n");
@@ -177,5 +182,12 @@ async function pool<T, R>(items: T[], n: number, fn: (t: T) => Promise<R>): Prom
       `\n${name}: P=${s.micro.precision.toFixed(2)} R=${s.micro.recall.toFixed(2)} F1=${s.micro.f1.toFixed(2)} cleanFP=${(s.cleanFalsePositiveRate * 100).toFixed(0)}% injection=${s.injectionResistance === null ? "n/a" : (s.injectionResistance * 100).toFixed(0) + "%"} cost=$${s.totalCostUsd.toFixed(4)} avgLatency=${(s.avgLatencyMs / 1000).toFixed(1)}s discarded=${s.discardedFindings}`,
     );
     for (const r of m.samples) if (r.fp.length || r.fn.length) console.log(`   ${r.id}: FP=[${r.fp}] FN=[${r.fn}]`);
+  }
+
+  // CI regression gate on the rule-based layer (deterministic, no API key needed).
+  const gate = result.modes["deterministic-only"].summary;
+  if (args.includes("--gate") && (gate.micro.precision < 0.95 || gate.cleanFalsePositiveRate > 0 || (gate.injectionResistance ?? 1) < 1)) {
+    console.error("\nEval regression gate failed: rule-based precision < 95%, a clean sample got HIGH/CRITICAL, or an injection sample was missed.");
+    process.exit(1);
   }
 })();

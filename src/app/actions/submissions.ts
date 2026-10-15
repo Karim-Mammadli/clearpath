@@ -279,3 +279,54 @@ export async function decideSubmission(_prev: FormState, formData: FormData): Pr
   revalidatePath(`/submissions/${sub.id}`);
   return { ok: true };
 }
+
+const ManualFindingSchema = z.object({
+  versionId: z.string().min(1),
+  ruleCode: z.string().min(1).max(64),
+  quote: z.string().min(3).max(1000),
+  startOffset: z.coerce.number().int().min(0),
+  endOffset: z.coerce.number().int().positive(),
+  explanation: z.string().trim().min(3, "Add an explanation").max(600),
+  suggestedFix: z.string().trim().max(600).optional(),
+});
+
+/** Reviewer-added finding from a text selection. Offsets are re-verified against the stored text. */
+export async function addManualFinding(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!isReviewer(user)) throw new Error("Only reviewers can add findings");
+  const v = ManualFindingSchema.parse({
+    versionId: formData.get("versionId"),
+    ruleCode: formData.get("ruleCode"),
+    quote: formData.get("quote"),
+    startOffset: formData.get("startOffset"),
+    endOffset: formData.get("endOffset"),
+    explanation: formData.get("explanation"),
+    suggestedFix: formData.get("suggestedFix") || undefined,
+  });
+  const version = await db.submissionVersion.findUniqueOrThrow({ where: { id: v.versionId }, include: { submission: true } });
+  if (version.versionNumber !== version.submission.currentVersionNumber) throw new Error("You can only add findings to the current version.");
+  if (version.submission.status === "APPROVED" || version.submission.status === "REJECTED") throw new Error("This submission is already decided.");
+  if (version.contentText.slice(v.startOffset, v.endOffset) !== v.quote) throw new Error("The selected text doesn't match the stored content. Reload and try again.");
+  const rule = await db.rule.findUnique({ where: { code: v.ruleCode } });
+  if (!rule) throw new Error("Unknown rule");
+
+  const f = await db.finding.create({
+    data: {
+      versionId: version.id,
+      ruleCode: rule.code,
+      source: "REVIEWER",
+      severity: rule.severity,
+      quote: v.quote,
+      startOffset: v.startOffset,
+      endOffset: v.endOffset,
+      explanation: v.explanation,
+      suggestedFix: v.suggestedFix ?? null,
+      decision: "ACCEPTED",
+      decidedById: user.id,
+      decidedAt: new Date(),
+    },
+  });
+  await writeAudit({ actorId: user.id, action: "FINDING_ADDED", entityType: "Finding", entityId: f.id, metadata: { submissionId: version.submissionId, ruleCode: rule.code, quote: v.quote.slice(0, 200) } });
+  await refreshPriority(version.submissionId);
+  revalidatePath(`/submissions/${version.submissionId}`);
+}

@@ -11,12 +11,14 @@ import { DecisionBar } from "@/components/review/decision-bar";
 import { DiffView } from "@/components/review/diff-view";
 import { FindingCard, type FindingView } from "@/components/review/finding-card";
 import { ResubmitForm } from "@/components/review/resubmit-form";
+import { SelectionFinding } from "@/components/review/selection-finding";
 import { RewritePanel } from "@/components/review/rewrite-panel";
 import { Button } from "@/components/ui/button";
 import { canSubmit, canViewSubmission, getCurrentUser, isReviewer } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { label, SEVERITY_RANK, type SeverityCode } from "@/lib/domain";
 import type { ExtractionMeta } from "@/lib/extract";
+import { getApplicableRules } from "@/lib/review/rules";
 import { computeRisk } from "@/lib/review/scoring";
 import { cn } from "@/lib/utils";
 import { editableText } from "@/lib/versions";
@@ -58,10 +60,11 @@ export default async function SubmissionPage({ params, searchParams }: { params:
   }
 
   const [rules, reviewers] = await Promise.all([
-    db.rule.findMany({ select: { code: true, title: true, citation: true } }),
+    db.rule.findMany({ select: { code: true, title: true, citation: true, severity: true, products: true, channels: true, affiliateOnly: true, active: true } }),
     reviewer ? db.user.findMany({ where: { role: { in: ["REVIEWER", "ADMIN"] } }, select: { id: true, name: true }, orderBy: { name: "asc" } }) : Promise.resolve([]),
   ]);
   const ruleMap = new Map(rules.map((r) => [r.code, r]));
+  const applicableRules = getApplicableRules(rules, { product: sub.product, channel: sub.channel, isAffiliate: !!sub.affiliateId }).map((r) => ({ code: r.code, title: r.title, severity: r.severity }));
 
   const vNum = Math.min(Math.max(1, Number(sp.v) || sub.currentVersionNumber), sub.versions.length);
   const version = sub.versions.find((v) => v.versionNumber === vNum) ?? sub.versions[sub.versions.length - 1];
@@ -217,7 +220,9 @@ export default async function SubmissionPage({ params, searchParams }: { params:
               v{version.versionNumber} · {label(version.source)} · {version.createdBy?.name ?? "system"} · {fmt(version.createdAt)}
               {!isCurrent && <span className="ml-2 font-medium text-amber-700">(not the current version)</span>}
             </div>
-            {showDiff && prev ? <DiffView before={prev.contentText} after={version.contentText} /> : <ContentView text={version.contentText} findings={version.findings} />}
+            {showDiff && prev ? <DiffView before={prev.contentText} after={version.contentText} /> : <SelectionFinding versionId={version.id} rules={applicableRules} enabled={reviewer && isCurrent && sub.status !== "APPROVED" && sub.status !== "REJECTED"}>
+                <ContentView text={version.contentText} findings={version.findings} />
+              </SelectionFinding>}
             {prev && (
               <div className="mt-4 rounded-md border bg-zinc-50 px-3 py-2 text-xs text-zinc-700">
                 Since v{prev.versionNumber}: <span className="font-medium text-emerald-700">{resolved.length} finding(s) resolved</span> ·{" "}
