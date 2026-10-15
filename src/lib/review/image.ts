@@ -12,7 +12,7 @@ import { INVISIBLE_CHARS } from "./text";
 
 export const IMAGE_MARKER = "[IMAGE TEXT — transcribed from the attached image by AI; verify against the image]";
 export const IMAGE_PROMPT_VERSION = "transcribe.v1";
-export const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
+export const MAX_IMAGE_BYTES = 4 * 1024 * 1024; // after client-side resize; Vercel caps request bodies at 4.5MB
 
 /** Allowed types are detected from magic bytes, not the client-supplied MIME type. SVG is excluded (scriptable). */
 export function sniffImageMime(b: Uint8Array): "image/png" | "image/jpeg" | "image/gif" | "image/webp" | null {

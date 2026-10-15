@@ -19,7 +19,7 @@ import { ContentTooLongError, createVersionAndReview, nextVersionNumber, editabl
 async function readImage(formData: FormData, field = "image"): Promise<{ image: NewImage | null; error?: string }> {
   const file = formData.get(field);
   if (!file || typeof file === "string" || file.size === 0) return { image: null };
-  if (file.size > MAX_IMAGE_BYTES) return { image: null, error: `Image is ${(file.size / 1024 / 1024).toFixed(1)}MB; the limit is 3MB.` };
+  if (file.size > MAX_IMAGE_BYTES) return { image: null, error: `Image is ${(file.size / 1024 / 1024).toFixed(1)}MB; the upload limit is 4MB (pick it in the app so it can be resized).` };
   const data = new Uint8Array(await file.arrayBuffer());
   const mime = sniffImageMime(data);
   if (!mime) return { image: null, error: "Unsupported image. Use PNG, JPEG, GIF or WebP." };

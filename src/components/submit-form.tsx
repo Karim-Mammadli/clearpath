@@ -139,7 +139,7 @@ export function SubmitForm({ samples, rulesByKey }: { samples: SampleOpt[]; rule
         )}
       </div>
 
-      <ImageInput hint="PNG, JPEG, GIF or WebP up to 3MB. The AI transcribes the text in the image (including fine print) so it is checked against the same rules, and flags instructions hidden in images." />
+      <ImageInput hint="PNG, JPEG, GIF or WebP up to 5MB (large images are resized in your browser before upload). The AI transcribes the text in the image (including fine print) so it is checked against the same rules, and flags instructions hidden in images." />
 
       <div className="grid gap-4 md:grid-cols-2">
         <label className="space-y-1.5">

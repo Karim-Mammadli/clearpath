@@ -6,8 +6,8 @@ const nextConfig: NextConfig = {
   cacheComponents: false,
   partialPrefetching: false,
   experimental: {
-    // Optional image creatives (≤ 3MB, validated server-side) are uploaded through server actions.
-    serverActions: { bodySizeLimit: "4mb" },
+    // Image creatives (up to 5MB chosen, resized in the browser to ≤3.5MB, re-validated server-side) go through server actions.
+    serverActions: { bodySizeLimit: "4.5mb" },
   },
   turbopack: {
     rules: {

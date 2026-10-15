@@ -4,8 +4,30 @@ import { useEffect, useRef, useState } from "react";
 import { ImagePlus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const MAX = 3 * 1024 * 1024;
+const MAX = 5 * 1024 * 1024; // what the user may pick/paste
+const UPLOAD_TARGET = 3.5 * 1024 * 1024; // what we send (Vercel caps request bodies at 4.5MB)
+const MAX_SIDE = 2400; // plenty for the model to read fine print
 const TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp"];
+
+/** Downscales/re-encodes large images in the browser so the upload fits under the platform body limit. */
+async function shrinkIfNeeded(file: File): Promise<File> {
+  if (file.size <= UPLOAD_TARGET) return file;
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  for (const [type, quality] of [["image/webp", 0.9], ["image/webp", 0.8], ["image/jpeg", 0.8], ["image/jpeg", 0.65]] as const) {
+    const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, type, quality));
+    if (blob && blob.size <= UPLOAD_TARGET && (blob.type === type)) {
+      const base = file.name.replace(/\.[a-z0-9]+$/i, "") || "image";
+      return new File([blob], `${base}.${type === "image/webp" ? "webp" : "jpg"}`, { type });
+    }
+  }
+  throw new Error("Couldn't compress this image under the upload limit. Try a smaller image.");
+}
 
 /**
  * Optional image field: choose a file, drag & drop, or paste (Ctrl/Cmd+V anywhere on the page).
@@ -18,7 +40,7 @@ export function ImageInput({ label = "Image creative (optional)", hint, compact 
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
 
-  function setFile(file: File | null) {
+  async function setFile(file: File | null) {
     setError(null);
     const input = inputRef.current;
     if (!input) return;
@@ -29,14 +51,26 @@ export function ImageInput({ label = "Image creative (optional)", hint, compact 
       return;
     }
     if (!TYPES.includes(file.type)) {
+      input.value = "";
       setError("Use a PNG, JPEG, GIF or WebP image.");
       return;
     }
     if (file.size > MAX) {
-      setError(`Image is ${(file.size / 1024 / 1024).toFixed(1)}MB; the limit is 3MB.`);
+      input.value = "";
+      setPreview(null);
+      setError(`Image is ${(file.size / 1024 / 1024).toFixed(1)}MB; the limit is 5MB.`);
       return;
     }
-    const named = file.name && file.name !== "image.png" ? file : new File([file], `pasted-${Date.now()}.${file.type.split("/")[1]}`, { type: file.type });
+    let ready: File;
+    try {
+      ready = await shrinkIfNeeded(file);
+    } catch (e) {
+      input.value = "";
+      setPreview(null);
+      setError((e as Error).message);
+      return;
+    }
+    const named = ready.name && ready.name !== "image.png" ? ready : new File([ready], `pasted-${Date.now()}.${ready.type.split("/")[1]}`, { type: ready.type });
     const dt = new DataTransfer();
     dt.items.add(named);
     input.files = dt.files;
@@ -75,7 +109,7 @@ export function ImageInput({ label = "Image creative (optional)", hint, compact 
     >
       {!compact && <div className="text-sm font-medium">{label}</div>}
       <p className="text-xs text-muted-foreground">
-        {hint ?? "PNG, JPEG, GIF or WebP up to 3MB."} <span className="font-medium text-foreground">Paste (Ctrl/⌘+V), drag & drop, or choose a file.</span>
+        {hint ?? "PNG, JPEG, GIF or WebP up to 5MB."} <span className="font-medium text-foreground">Paste (Ctrl/⌘+V), drag & drop, or choose a file.</span>
       </p>
       <div className="flex flex-wrap items-center gap-2">
         <input

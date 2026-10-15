@@ -14,7 +14,7 @@ Product, scope and technical assumptions made for v1. These feed the README and 
 
 ## Scope (v1)
 
-- **Text + one optional image per version.** Email/SMS/social copy, ad copy, HTML pages (fetched by URL), and an image creative whose text the AI transcribes for review. Images (≤3MB) are stored in Postgres for v1; production would use object storage with malware scanning. Video and audio are future work.
+- **Text + one optional image per version.** Email/SMS/social copy, ad copy, HTML pages (fetched by URL), and an image creative whose text the AI transcribes for review. Images (up to 5MB chosen; resized client-side to ≤3.5MB because Vercel caps request bodies at 4.5MB) are stored in Postgres for v1; production would use object storage with malware scanning. Video and audio are future work.
 - **Assignment is manual:** any reviewer can assign or reassign an item to any reviewer (queue Assignee column, submission page, dashboard). Unassigned items stay visible in the queue. Auto-routing (by product/affiliate, load balancing) is future work.
 - **Demo auth:** a role switcher backed by seeded users and a cookie (no passwords). Real version: SSO/SAML with role mapping from the IdP. All authorization is still enforced server-side.
 - **Rule library is read-only in the UI** (with per-rule stats). Editing rules would bump the rule-set version; the data model already stores the rule-set version on every AI review.
