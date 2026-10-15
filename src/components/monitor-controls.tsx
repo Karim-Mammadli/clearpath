@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 function Go({ children, variant = "outline" }: { children: React.ReactNode; variant?: "outline" | "default" }) {
   const { pending } = useFormStatus();
   return (
-    <Button size="sm" variant={variant} disabled={pending}>
+    <Button type="submit" size="sm" variant={variant} disabled={pending}>
       {pending ? <Loader2 className="animate-spin" /> : <RefreshCw />}
       {pending ? "Checking…" : children}
     </Button>

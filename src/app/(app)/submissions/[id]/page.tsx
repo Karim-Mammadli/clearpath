@@ -133,7 +133,7 @@ export default async function SubmissionPage({ params, searchParams }: { params:
             {sub.assignedReviewerId !== user.id && (
               <form action={assignToMe}>
                 <input type="hidden" name="submissionId" value={sub.id} />
-                <Button size="xs" variant="outline">
+                <Button type="submit" size="xs" variant="outline">
                   Assign to me
                 </Button>
               </form>

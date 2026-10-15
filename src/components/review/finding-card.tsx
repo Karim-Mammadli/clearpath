@@ -82,7 +82,7 @@ export function FindingCard({ f, canDecide }: { f: FindingView; canDecide: boole
               <form action={submit}>
                 <input type="hidden" name="findingId" value={f.id} />
                 <input type="hidden" name="decision" value="ACCEPTED" />
-                <Button size="sm" variant="outline" disabled={pending}>
+                <Button type="submit" size="sm" variant="outline" disabled={pending}>
                   <Check /> Accept
                 </Button>
               </form>
@@ -107,7 +107,7 @@ export function FindingCard({ f, canDecide }: { f: FindingView; canDecide: boole
               </select>
               <input name="dismissNote" placeholder="Note (required for Other)" maxLength={500} className="h-8 w-full rounded-md border bg-white px-2 text-sm" />
               <div className="flex gap-2">
-                <Button size="sm" disabled={pending}>
+                <Button type="submit" size="sm" disabled={pending}>
                   Confirm dismiss
                 </Button>
                 <Button size="sm" variant="ghost" type="button" onClick={() => setDismissing(false)}>
@@ -120,7 +120,7 @@ export function FindingCard({ f, canDecide }: { f: FindingView; canDecide: boole
             <form action={submit}>
               <input type="hidden" name="findingId" value={f.id} />
               <input type="hidden" name="decision" value="PENDING" />
-              <Button size="xs" variant="ghost" disabled={pending}>
+              <Button type="submit" size="xs" variant="ghost" disabled={pending}>
                 <RotateCcw /> Reopen
               </Button>
             </form>

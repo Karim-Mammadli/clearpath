@@ -100,14 +100,14 @@ export default async function MonitoringPage() {
                   {!p.showChanged ? (
                     <form action={simulateAffiliateEdit}>
                       <input type="hidden" name="slug" value={p.slug} />
-                      <Button size="sm" variant="destructive">
+                      <Button type="submit" size="sm" variant="destructive">
                         Simulate affiliate edit
                       </Button>
                     </form>
                   ) : (
                     <form action={resetAffiliateDemo}>
                       <input type="hidden" name="slug" value={p.slug} />
-                      <Button size="sm" variant="outline">
+                      <Button type="submit" size="sm" variant="outline">
                         Reset demo
                       </Button>
                     </form>
