@@ -14,10 +14,13 @@
 - **Submit** text, HTML, a URL, or an image (paste/drag; the AI reads text in images). Channel decides which of the 18 rules apply.
 - **Review page:**
   - highlighted findings with citation and fix
-  - accept/dismiss with a reason; reviewers can add their own findings by selecting text
+  - reviewers mark each finding **Confirm issue** or **Not an issue** (reason required) and can add their own by selecting text; this records judgment and never edits the ad
   - risk score with a "why" breakdown
   - comments, version diffs
 - **Decisions:** approval is blocked by open CRITICAL findings unless overridden with an audited reason.
+- **After a decision:**
+  - **Changes requested / rejected:** the submitter gets a feedback panel with the reviewer's message and a "what to fix" checklist of confirmed issues and fixes, plus one-click AI rewrite or resubmit.
+  - **Approved:** an **"Approved: ready to launch"** hand-off with an approval ID, approver, and the exact approved copy to launch (any change needs re-review).
 - **Compliant rewrite:** the AI fixes the copy, then the full pipeline re-checks it before it can be submitted.
 - **Queue** (prioritized, filterable, assignable) and **dashboard** KPIs (time to decision, first-pass rate, issues fixed before review, AI precision).
 - **Affiliate drift monitoring:** if an approved page changes, it's re-reviewed and flagged automatically.
@@ -38,6 +41,19 @@
 - **Cost control:** content-hash cache ($0 re-reviews), prompt caching, a hard spend cap and an hourly limit for the public demo.
 - **Reproducible and measured:** versioned rules and prompts stored on every review, plus a CI eval regression gate.
 
+## Technologies
+
+| Area | Used |
+|---|---|
+| App | Next.js 16 (App Router, Server Components, Server Actions) · React 19 · TypeScript (strict) |
+| UI | Tailwind CSS 4 · shadcn/ui (Base UI) · lucide-react · Recharts · next-themes (light/dark) · Sonner · custom WebGL/GLSL shader (landing page) |
+| Data | PostgreSQL on Neon (serverless) · Prisma 7 (Neon driver adapter, migrations, seed) |
+| AI | OpenAI Responses API (`gpt-6.1-sol`, reasoning effort config) · Structured Outputs from Zod 4 schemas · vision for image transcription |
+| Content processing | cheerio (HTML extraction with hidden-content detection) · jsdiff (version diffs) · SSRF-guarded fetch |
+| Quality | Vitest (49 unit tests) · eval harness (`npm run eval`) · ESLint · GitHub Actions CI with an eval regression gate |
+| Hosting | Vercel (auto-deploy from `main`) · Neon via Vercel Storage |
+| Built with | Claude Code (AI pair programmer), steered by `CLAUDE.md` and the specs in `docs/` |
+
 ## With more time / at company scale
 
 - **Security:** SSO, object storage with malware scanning, immutable audit storage, zero-data-retention with the model provider, PII redaction.
@@ -55,4 +71,5 @@
   - dark mode
   - CI with an eval gate
   - landing page with a custom WebGL gradient
+  - approval hand-off panel and reviewer feedback checklist
 - **Numbers:** 18 rules · 22 eval samples · 49 tests · ~$0.60 total API spend.

@@ -9,6 +9,8 @@ Product, scope and technical assumptions made for v1. These feed the README and 
 - **Affiliates submit through the same portal** as internal marketers (with their own accounts, scoped to their own affiliate) instead of emailing PDFs/screenshots.
 - **Marketers see their whole team's first-party submissions** (not just their own), so a teammate can pick up a resubmission. Affiliates only ever see their own affiliate's items.
 - **AI assists, never approves.** The AI pre-check produces findings and a summary; risk scores are computed in code; only a human reviewer can approve, request changes, or reject. Approving with an unresolved CRITICAL finding needs an audited override reason.
+- **Reviewers judge, submitters edit.** Confirming or dismissing a finding records the reviewer's judgment (and updates risk); it never edits the ad. The owner of the asset changes the copy (or uses the AI rewrite), creating a new version with a diff.
+- **Approval is the hand-off.** The app doesn't publish ads; it issues an approval ID with the exact approved copy, which marketers launch in their own tools. In production, campaign tools would require a valid approval ID (integration).
 - **Rules are simplified** summaries of Reg Z/TILA, UDAAP, FCRA, ECOA, CAN-SPAM, TCPA, the FTC Endorsement Guides and internal policy. **Not legal advice.** In reality, compliance/legal would own the rule library and its versioning.
 - **TCPA consent** (prior express written consent) is assumed to be collected by the consent platform; we only check message content.
 
