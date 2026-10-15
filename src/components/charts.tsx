@@ -26,7 +26,7 @@ export function TopRulesChart({ data }: { data: { rule: string; count: number }[
         <XAxis type="number" allowDecimals={false} hide />
         <YAxis type="category" dataKey="rule" width={190} tickLine={false} axisLine={false} fontSize={11} />
         <Tooltip cursor={{ fill: "#f4f4f5" }} />
-        <Bar dataKey="count" name="Findings" fill="#4f46e5" radius={[0, 3, 3, 0]} />
+        <Bar dataKey="count" name="Findings" fill="#0E7C66" radius={[0, 3, 3, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );

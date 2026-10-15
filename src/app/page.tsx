@@ -3,6 +3,9 @@ import {
   ArrowRight,
   Bot,
   ClipboardCheck,
+  Handshake,
+  PenLine,
+  ShieldCheck,
   FileSearch,
   FlaskConical,
   GitCompareArrows,
@@ -105,10 +108,10 @@ const FEATURES = [
 ];
 
 const ROLES = [
-  { id: "u_sam", role: "Compliance reviewer", who: "Sam Okafor", body: "Work the prioritized queue, triage AI findings, decide." },
-  { id: "u_maya", role: "Marketer", who: "Maya Chen", body: "Submit content, get instant findings, fix and resubmit." },
-  { id: "u_jordan", role: "Affiliate partner", who: "Jordan Blake · LoanFinderHub", body: "Sees only their own submissions. Server-enforced." },
-  { id: "u_alex", role: "Compliance lead", who: "Alex Morgan", body: "Everything, plus AI Ops, evals and drift-monitoring controls." },
+  { id: "u_sam", icon: ClipboardCheck, role: "Compliance reviewer", who: "Sam Okafor", body: "Work the prioritized queue, triage AI findings, decide." },
+  { id: "u_maya", icon: PenLine, role: "Marketer", who: "Maya Chen", body: "Submit content, get instant findings, fix and resubmit." },
+  { id: "u_jordan", icon: Handshake, role: "Affiliate partner", who: "Jordan Blake · LoanFinderHub", body: "Sees only their own submissions. Server-enforced." },
+  { id: "u_alex", icon: ShieldCheck, role: "Compliance lead", who: "Alex Morgan", body: "Everything, plus AI Ops, evals and drift-monitoring controls." },
 ];
 
 export default function Landing() {
@@ -227,7 +230,7 @@ export default function Landing() {
             <form key={r.id} action={switchUser}>
               <input type="hidden" name="userId" value={r.id} />
               <button type="submit" className="group h-full w-full rounded-2xl border bg-card p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">
-                <ClipboardCheck className="size-5 text-primary" />
+                <r.icon className="size-5 text-primary" />
                 <div className="mt-3 font-semibold">{r.role}</div>
                 <div className="text-xs text-muted-foreground">{r.who}</div>
                 <p className="mt-2 text-sm text-muted-foreground">{r.body}</p>
