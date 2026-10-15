@@ -20,9 +20,9 @@ export function Stat({ label, value, hint }: { label: string; value: React.React
   );
 }
 
-export function Panel({ title, children, actions, className }: { title?: React.ReactNode; children: React.ReactNode; actions?: React.ReactNode; className?: string }) {
+export function Panel({ title, children, actions, className, id }: { title?: React.ReactNode; children: React.ReactNode; actions?: React.ReactNode; className?: string; id?: string }) {
   return (
-    <section className={`rounded-xl border bg-card shadow-sm ${className ?? ""}`}>
+    <section id={id} className={`rounded-xl border bg-card shadow-sm ${className ?? ""}`}>
       {title && (
         <div className="flex items-center justify-between gap-2 border-b px-4 py-2.5">
           <h2 className="text-sm font-semibold">{title}</h2>

@@ -13,6 +13,7 @@ import { FindingCard, type FindingView } from "@/components/review/finding-card"
 import { ResubmitForm } from "@/components/review/resubmit-form";
 import { SelectionFinding } from "@/components/review/selection-finding";
 import { RewritePanel } from "@/components/review/rewrite-panel";
+import { ApprovedPanel, FeedbackPanel } from "@/components/review/outcome-panels";
 import { Button } from "@/components/ui/button";
 import { canSubmit, canViewSubmission, getCurrentUser, isReviewer } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -97,6 +98,26 @@ export default async function SubmissionPage({ params, searchParams }: { params:
 
   const risk = computeRisk(version.findings.map((f) => ({ severity: f.severity as SeverityCode, decision: f.decision })), ai?.injectionSuspected ?? false);
   const blockingCriticals = version.findings.filter((f) => f.severity === "CRITICAL" && f.decision !== "DISMISSED").length;
+  const triage = {
+    confirmed: version.findings.filter((f) => f.decision === "ACCEPTED").length,
+    dismissed: version.findings.filter((f) => f.decision === "DISMISSED").length,
+    pending: version.findings.filter((f) => f.decision === "PENDING").length,
+  };
+
+  // Outcome of the latest decision, shown as a hand-off (approved) or actionable feedback (changes / rejected).
+  const lastDecision = sub.decisions[sub.decisions.length - 1] ?? null;
+  const decidedVersion = lastDecision ? sub.versions.find((v) => v.id === lastDecision.versionId) : undefined;
+  const outcomeFindings = (decidedVersion?.findings ?? []).map((f) => ({
+    id: f.id,
+    ruleCode: f.ruleCode,
+    ruleTitle: ruleMap.get(f.ruleCode)?.title ?? f.ruleCode,
+    severity: f.severity,
+    quote: f.quote,
+    missing: f.missing,
+    suggestedFix: f.suggestedFix,
+    decision: f.decision,
+    dismissReason: f.dismissReason,
+  }));
 
   // Resolved vs new compared with the previous version (by rule + quote).
   const key = (f: { ruleCode: string; quote: string }) => `${f.ruleCode}|${f.quote}`;
@@ -142,6 +163,29 @@ export default async function SubmissionPage({ params, searchParams }: { params:
         {reviewer && <AssignSelect submissionId={sub.id} current={sub.assignedReviewerId} reviewers={reviewers} />}
       </div>
 
+      {sub.status === "APPROVED" && lastDecision?.outcome === "APPROVED" && decidedVersion && (
+        <ApprovedPanel
+          decisionId={lastDecision.id}
+          approvedAt={lastDecision.createdAt}
+          approvedBy={lastDecision.reviewer.name}
+          versionNumber={decidedVersion.versionNumber}
+          copy={editableText(decidedVersion.contentText)}
+          hasImage={!!decidedVersion.image}
+          monitoredUrl={sub.monitored?.url ?? null}
+          overrideNote={lastDecision.overrideNote}
+        />
+      )}
+      {(sub.status === "CHANGES_REQUESTED" || sub.status === "REJECTED") && lastDecision && lastDecision.outcome === sub.status && decidedVersion && (
+        <FeedbackPanel
+          outcome={sub.status}
+          reviewer={lastDecision.reviewer.name}
+          at={lastDecision.createdAt}
+          message={lastDecision.reason}
+          versionNumber={decidedVersion.versionNumber}
+          findings={outcomeFindings}
+          canAct={canSubmit(user)}
+        />
+      )}
       {sp.new && !reviewer && (
         <div className="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm text-indigo-900">
           Submitted. The AI pre-check is done — fix any issues below and resubmit now, before a reviewer picks it up.
@@ -257,13 +301,13 @@ export default async function SubmissionPage({ params, searchParams }: { params:
           )}
 
           {isCurrent && hasOpenFindings && (sub.status === "IN_REVIEW" || sub.status === "CHANGES_REQUESTED" || sub.status === "DRIFT_DETECTED") && (
-            <Panel title="Compliant rewrite (AI)">
+            <Panel title="Compliant rewrite (AI)" className="scroll-mt-20" id="rewrite">
               <RewritePanel submissionId={sub.id} canSubmitVersion={canResubmit} />
             </Panel>
           )}
 
           {canResubmit && (
-            <Panel title="Fix and resubmit">
+            <Panel title="Fix and resubmit" className="scroll-mt-20" id="resubmit">
               <p className="mb-2 text-sm text-muted-foreground">Edit the content and submit a new version. All checks re-run and the reviewer sees a diff.</p>
               <ResubmitForm submissionId={sub.id} initial={editable} hasImage={!!version.image} />
             </Panel>
@@ -361,6 +405,16 @@ export default async function SubmissionPage({ params, searchParams }: { params:
             <h2 className="text-sm font-semibold">
               Findings <span className="font-normal text-muted-foreground">({findings.filter((f) => f.decision !== "DISMISSED").length} open)</span>
             </h2>
+            {reviewer && isCurrent && findings.length > 0 && (
+              <div className="rounded-lg border bg-card px-3 py-2 text-xs text-muted-foreground">
+                <div className="mb-1 flex flex-wrap gap-x-3 gap-y-1 font-medium">
+                  <span className="text-emerald-700">{triage.confirmed} confirmed</span>
+                  <span>{triage.dismissed} not an issue</span>
+                  <span className={triage.pending ? "text-amber-700" : ""}>{triage.pending} to review</span>
+                </div>
+                Confirming or dismissing doesn&apos;t edit the ad. It records your judgment, updates the risk score, and becomes the submitter&apos;s fix list when you request changes.
+              </div>
+            )}
             {findings.length === 0 && <div className="rounded-lg border border-dashed bg-card p-6 text-center text-sm text-emerald-700">No findings. Ready for a quick human check.</div>}
             {groups.map((g) => (
               <div key={g.sev} className="space-y-2">

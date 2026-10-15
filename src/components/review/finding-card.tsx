@@ -53,10 +53,10 @@ export function FindingCard({ f, canDecide }: { f: FindingView; canDecide: boole
         {f.missing && <span className="rounded border border-dashed border-zinc-400 px-1.5 text-[11px] text-zinc-600">Missing element</span>}
         {f.confidence !== null && f.source === "LLM" && <span className="text-[11px] text-muted-foreground">conf. {Math.round(f.confidence * 100)}%</span>}
         <span className="ml-auto text-[11px] font-medium">
-          {f.decision === "ACCEPTED" && <span className="text-emerald-700">Accepted{f.decidedBy ? ` · ${f.decidedBy}` : ""}</span>}
+          {f.decision === "ACCEPTED" && <span className="text-emerald-700">{f.source === "REVIEWER" ? "Added" : "Confirmed"}{f.decidedBy ? ` by ${f.decidedBy}` : ""}</span>}
           {dismissed && (
             <span className="text-zinc-600">
-              {f.previouslyDismissed ? "Previously dismissed" : "Dismissed"} · {label(f.dismissReason)}
+              {f.previouslyDismissed ? "Previously dismissed" : "Not an issue"} · {label(f.dismissReason)}
             </span>
           )}
         </span>
@@ -83,11 +83,11 @@ export function FindingCard({ f, canDecide }: { f: FindingView; canDecide: boole
                 <input type="hidden" name="findingId" value={f.id} />
                 <input type="hidden" name="decision" value="ACCEPTED" />
                 <Button type="submit" size="sm" variant="outline" disabled={pending}>
-                  <Check /> Accept
+                  <Check /> Confirm issue
                 </Button>
               </form>
               <Button size="sm" variant="ghost" disabled={pending} onClick={() => setDismissing(true)}>
-                <CircleSlash /> Dismiss
+                <CircleSlash /> Not an issue
               </Button>
             </div>
           )}
@@ -108,7 +108,7 @@ export function FindingCard({ f, canDecide }: { f: FindingView; canDecide: boole
               <input name="dismissNote" placeholder="Note (required for Other)" maxLength={500} className="h-8 w-full rounded-md border bg-card px-2 text-sm" />
               <div className="flex gap-2">
                 <Button type="submit" size="sm" disabled={pending}>
-                  Confirm dismiss
+                  Confirm: not an issue
                 </Button>
                 <Button size="sm" variant="ghost" type="button" onClick={() => setDismissing(false)}>
                   Cancel
