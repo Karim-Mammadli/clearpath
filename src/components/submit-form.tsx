@@ -4,6 +4,7 @@ import { useActionState, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { Loader2 } from "lucide-react";
 import { createSubmission, type FormState } from "@/app/actions/submissions";
+import { ImageInput } from "@/components/image-input";
 import { Button } from "@/components/ui/button";
 import { CHANNELS, PRODUCTS, label } from "@/lib/domain";
 
@@ -138,7 +139,7 @@ export function SubmitForm({ samples, rulesByKey }: { samples: SampleOpt[]; rule
         )}
       </div>
 
-      <ImagePicker />
+      <ImageInput hint="PNG, JPEG, GIF or WebP up to 3MB. The AI transcribes the text in the image (including fine print) so it is checked against the same rules, and flags instructions hidden in images." />
 
       <div className="grid gap-4 md:grid-cols-2">
         <label className="space-y-1.5">
@@ -157,36 +158,3 @@ export function SubmitForm({ samples, rulesByKey }: { samples: SampleOpt[]; rule
   );
 }
 
-function ImagePicker() {
-  const [preview, setPreview] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  return (
-    <div className="space-y-2 rounded-md border border-dashed p-3">
-      <div className="text-sm font-medium">Image creative (optional)</div>
-      <p className="text-xs text-muted-foreground">
-        PNG, JPEG, GIF or WebP up to 3MB. The AI transcribes the text in the image (including fine print) so it&apos;s checked against the same rules, and flags instructions hidden in images.
-      </p>
-      <input
-        type="file"
-        name="image"
-        accept="image/png,image/jpeg,image/gif,image/webp"
-        className="text-sm file:mr-3 file:rounded-md file:border file:bg-card file:px-3 file:py-1.5 file:text-sm"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          setError(null);
-          if (preview) URL.revokeObjectURL(preview);
-          if (!file) return setPreview(null);
-          if (file.size > 3 * 1024 * 1024) {
-            setError("Image is larger than 3MB.");
-            e.target.value = "";
-            return setPreview(null);
-          }
-          setPreview(URL.createObjectURL(file));
-        }}
-      />
-      {error && <p className="text-xs text-red-700">{error}</p>}
-      {/* eslint-disable-next-line @next/next/no-img-element -- local object URL preview */}
-      {preview && <img src={preview} alt="Selected image preview" className="max-h-48 rounded-md border object-contain" />}
-    </div>
-  );
-}
